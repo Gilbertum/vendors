@@ -85,23 +85,11 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 </head>
 <body>
 <div class="container">
-  <header>
-    <h1>📋 Матрица бандлов</h1>
-    <p class="subtitle">Подбор продуктов и партнёрских офферов</p>
-  </header>
-  <div class="industry-info" id="industry-info">
-    <h3>ℹ️ Об отрасли</h3>
-    <p id="industry-desc"></p>
-  </div>
+  <header><h1>📋 Матрица бандлов</h1><p class="subtitle">Подбор продуктов и партнёрских офферов</p></header>
+  <div class="industry-info" id="industry-info"><h3>ℹ️ Об отрасли</h3><p id="industry-desc"></p></div>
   <div class="selectors">
-    <div class="panel">
-      <h3>1. Отрасль клиента</h3>
-      <select id="industry-select"><option value="">Загрузка...</option></select>
-    </div>
-    <div class="panel">
-      <h3>2. Продукты банка</h3>
-      <div class="checkbox-group" id="products-list"><p class="loading">Выберите отрасль</p></div>
-    </div>
+    <div class="panel"><h3>1. Отрасль клиента</h3><select id="industry-select"><option value="">Загрузка...</option></select></div>
+    <div class="panel"><h3>2. Продукты банка</h3><div class="checkbox-group" id="products-list"><p class="loading">Выберите отрасль</p></div></div>
   </div>
   <div class="main-grid">
     <div class="left-content"><div class="bundles-grid" id="bundles-grid"></div></div>
@@ -130,24 +118,36 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 <button class="feedback-btn" id="feedback-btn">Оставить отзыв</button>
 
 <script>
-// 🔗 Ссылки на CSV (Google Sheets → CSV публикация)
 const CSV_URLS = {
   bundles: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6efI49YZlwvdIPdFpkwTVisWD9P63E3UJ9XkeWnmxtfXwJPBhjNGWerDmmixbV5aMadBQTjkw1UMq/pub?output=csv',
   products: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3BvjUqCxgtunnRNbJlX0D9T7nGowBNWf9C5ybNes6MFdYYvTs6M4i7HT0nlXDFsa3PvNN5qJcOvuz/pub?output=csv'
 };
 
-// 🗂️ Карта колонок: название в CSV → название в коде
+// 🗺️ Карта соответствия колонок (с поддержкой нескольких вариантов имени)
 const COL = {
-  products: { industry: 'industry', name: 'product', desc: 'product_desc', link: 'url_product' },
-  bundles: { id: 'ID', industry: 'industry', product: 'product', vendor: 'offer', benefit: 'short_desc', details: 'desc', link: 'url_offer' }
+  bundles: {
+    id: 'ID',
+    industry: 'industry',
+    product: 'product',
+    vendor: 'offer',
+    benefit: ['short_desc', 'benefit'], // Ищем short_desc, если нет — benefit
+    details: 'desc',
+    link: 'url_offer'
+  },
+  products: {
+    industry: 'industry',
+    name: 'product',
+    desc: 'product_desc',
+    link: 'url_product'
+  }
 };
 
 const CONFIG = {
   INDUSTRY_DESCS: {
-    "Независимый Еком": "Онлайн-продажи через собственный сайт или приложение. Клиент не зависит от маркетплейсов.",
-    "Зависимый Еком": "Продажи через маркетплейсы (Ozon, Wildberries, Яндекс.Маркет) как основной канал.",
-    "Розница": "Офлайн-точки продаж: магазины, салоны, кафе, сервисные центры.",
-    "IT": "Разработка ПО, веб-студии, аутсорсинг, IT-консалтинг.",
+    "Независимый Еком": "Онлайн-продажи через собственный сайт или приложение.",
+    "Зависимый Еком": "Продажи через маркетплейсы (Ozon, Wildberries, Яндекс.Маркет).",
+    "Розница": "Офлайн-точки продаж: магазины, салоны, кафе.",
+    "IT": "Разработка ПО, веб-студии, аутсорсинг.",
     "Стройка": "Строительство, ремонт, производство стройматериалов."
   }
 };
@@ -155,7 +155,9 @@ const CONFIG = {
 let selectedIndustry = "", selectedProducts = [], selectedBundleIds = [];
 let allBundles = [], allProducts = [], dataLoaded = false;
 
-// 🧹 CSV-парсер с поддержкой кавычек и запятых внутри полей
+// 🧹 Удаление BOM и парсинг CSV
+function cleanCSV(text) { return text.replace(/^\uFEFF/, ''); }
+
 function parseCSV(text) {
   const rows = [], re = /(?:,|\r?\n|^)(?:"([^"]*(?:""[^"]*)*)"|([^",\r\n]*))/g;
   let match, row = [];
@@ -170,61 +172,69 @@ function parseCSV(text) {
 }
 
 // 🔄 "Стройка, IT" → ["Стройка", "IT"]
-function parseIndustries(str) {
-  return (str || '').split(',').map(s => s.trim()).filter(Boolean);
+function parseIndustries(str) { return (str || '').split(',').map(s => s.trim()).filter(Boolean); }
+
+// 🔍 Получить значение по имени или массиву имен колонок
+function getVal(rowObj, keys) {
+  if (!keys) return '';
+  if (Array.isArray(keys)) {
+    for (let k of keys) { if (rowObj[k]) return rowObj[k]; }
+    return '';
+  }
+  return rowObj[keys] || '';
 }
 
-// 📥 Загрузка и преобразование данных
+// 📥 Загрузка данных
 async function loadData() {
   try {
     const [bRes, pRes] = await Promise.all([fetch(CSV_URLS.bundles), fetch(CSV_URLS.products)]);
     const [bText, pText] = await Promise.all([bRes.text(), pRes.text()]);
 
-    // Бандлы
-    const bRows = parseCSV(bText);
-    const bHeader = bRows[0].map(h => h.toLowerCase().trim());
-    allBundles = bRows.slice(1).map(row => {
-      const obj = {}; bHeader.forEach((h,i) => obj[h] = row[i] || '');
-      return {
-        id: obj[COL.bundles.id] || `b_${Math.random().toString(36).slice(2,8)}`,
-        industry: parseIndustries(obj[COL.bundles.industry]),
-        product: obj[COL.bundles.product],
-        vendor: obj[COL.bundles.vendor],
-        fullScript: obj[COL.bundles.benefit], // short_desc используем как fullScript для генерации
-        benefit: obj[COL.bundles.benefit],
-        benefitGen: obj[COL.bundles.benefit],
-        details: obj[COL.bundles.details],
-        link: obj[COL.bundles.link]
-      };
-    }).filter(b => b.product && b.vendor);
+    // Парсинг бандлов
+    const bRows = parseCSV(cleanCSV(bText));
+    if (bRows.length > 0) {
+      const headers = bRows[0].map(h => h.toLowerCase().trim());
+      allBundles = bRows.slice(1).map(row => {
+        const obj = {}; headers.forEach((h,i) => obj[h] = row[i] || '');
+        return {
+          id: getVal(obj, COL.bundles.id) || `b_${Math.random().toString(36).slice(2,8)}`,
+          industry: parseIndustries(getVal(obj, COL.bundles.industry)),
+          product: getVal(obj, COL.bundles.product),
+          vendor: getVal(obj, COL.bundles.vendor),
+          benefit: getVal(obj, COL.bundles.benefit),
+          details: getVal(obj, COL.bundles.details),
+          link: getVal(obj, COL.bundles.link)
+        };
+      }).filter(b => b.product && b.industry.length > 0);
+    }
 
-    // Продукты
-    const pRows = parseCSV(pText);
-    const pHeader = pRows[0].map(h => h.toLowerCase().trim());
-    allProducts = pRows.slice(1).map(row => {
-      const obj = {}; pHeader.forEach((h,i) => obj[h] = row[i] || '');
-      return {
-        industry: parseIndustries(obj[COL.products.industry]),
-        name: obj[COL.products.name],
-        desc: obj[COL.products.desc],
-        link: obj[COL.products.link]
-      };
-    }).filter(p => p.name);
+    // Парсинг продуктов
+    const pRows = parseCSV(cleanCSV(pText));
+    if (pRows.length > 0) {
+      const headers = pRows[0].map(h => h.toLowerCase().trim());
+      allProducts = pRows.slice(1).map(row => {
+        const obj = {}; headers.forEach((h,i) => obj[h] = row[i] || '');
+        return {
+          industry: parseIndustries(getVal(obj, COL.products.industry)),
+          name: getVal(obj, COL.products.name),
+          desc: getVal(obj, COL.products.desc),
+          link: getVal(obj, COL.products.link)
+        };
+      }).filter(p => p.name && p.industry.length > 0);
+    }
 
     dataLoaded = true;
     renderIndustries();
     console.log(`✓ Загружено: ${allBundles.length} бандлов, ${allProducts.length} продуктов`);
   } catch (err) {
     console.error('❌ Ошибка загрузки:', err);
-    document.getElementById('industry-select').innerHTML = '<option value="">Ошибка загрузки</option>';
-    document.getElementById('products-list').innerHTML = '<p style="color:var(--success-text)">Проверьте интернет</p>';
+    document.getElementById('industry-select').innerHTML = '<option value="">Ошибка загрузки данных</option>';
   }
 }
 
-// 🔍 Уникальные отрасли
+// 🔍 Уникальные отрасли (из продуктов, как просили)
 function getUniqueIndustries() {
   const s = new Set();
-  allBundles.forEach(b => b.industry.forEach(i => s.add(i)));
   allProducts.forEach(p => p.industry.forEach(i => s.add(i)));
   return Array.from(s).sort();
 }
@@ -238,14 +248,14 @@ function getBundles(ind, products) {
   return allBundles.filter(b => b.industry.includes(ind) && (products.length === 0 || products.includes(b.product)));
 }
 
-// ✅ Генерация HTML для отображения (с вводной + список + ссылки)
+// ✅ Генерация HTML
 function generateResultHTML(ids) {
   const bundles = ids.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (!bundles.length) return '';
   if (bundles.length === 1) {
     const b = bundles[0];
     const esc = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return b.fullScript.replace(new RegExp(esc, 'g'), `<a href="${b.link}" target="_blank">${b.vendor}</a>`);
+    return b.benefit.replace(new RegExp(esc, 'g'), `<a href="${b.link}" target="_blank">${b.vendor}</a>`);
   }
   const byProd = {};
   bundles.forEach(b => { if (!byProd[b.product]) byProd[b.product] = []; byProd[b.product].push(b); });
@@ -258,8 +268,7 @@ function generateResultHTML(ids) {
     intro = `Открой Расчетный счет${others.length ? ' и подключи ' + join(others) : ''}`;
   } else {
     const prods = entries.map(([p]) => p);
-    const action = entries[0][1][0].fullScript?.includes('Открой') ? 'Открой' : 'Подключи';
-    intro = `${action} ${join(prods)}`;
+    intro = `Открой ${join(prods)}`; // Упрощено для надежности
   }
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => html += `<li><a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefit}</li>`);
@@ -267,13 +276,12 @@ function generateResultHTML(ids) {
   return html;
 }
 
-// ✅ Чистый текст для копирования
+// ✅ Чистый текст
 function generateResultText(ids) {
   const bundles = ids.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (!bundles.length) return '';
-  if (bundles.length === 1) return bundles[0].fullScript;
-  const byProd = {};
-  bundles.forEach(b => { if (!byProd[b.product]) byProd[b.product] = []; byProd[b.product].push(b); });
+  if (bundles.length === 1) return bundles[0].benefit;
+  const byProd = {}; bundles.forEach(b => { if (!byProd[b.product]) byProd[b.product] = []; byProd[b.product].push(b); });
   const entries = Object.entries(byProd);
   const hasRko = entries.some(([p]) => p === "Расчетный счет");
   const join = arr => arr.length > 1 ? arr.slice(0,-1).join(', ') + ' и ' + arr[arr.length-1] : arr[0];
@@ -284,9 +292,7 @@ function generateResultText(ids) {
     if (benefits.length) r += ` и получи ${join(benefits)}`;
     return r;
   }
-  const prods = entries.map(([p]) => p);
-  const action = entries[0][1][0].fullScript?.includes('Открой') ? 'Открой' : 'Подключи';
-  return `${action} ${join(prods)} и получи ${join(benefits)}`;
+  return `Открой ${join(entries.map(([p]) => p))} и получи ${join(benefits)}`;
 }
 
 function renderIndustries() {
@@ -294,8 +300,7 @@ function renderIndustries() {
   if (!dataLoaded) return;
   sel.innerHTML = '<option value="">Выберите отрасль</option>';
   getUniqueIndustries().forEach(ind => {
-    const opt = document.createElement('option');
-    opt.value = ind; opt.textContent = ind;
+    const opt = document.createElement('option'); opt.value = ind; opt.textContent = ind;
     sel.appendChild(opt);
   });
 }
@@ -306,17 +311,12 @@ function renderProducts() {
   if (!selectedIndustry) { container.innerHTML = '<p style="color:var(--text-secondary);font-size:14px">Сначала выберите отрасль</p>'; return; }
   const products = getProductsForIndustry(selectedIndustry);
   if (!products.length) { container.innerHTML = '<p style="color:var(--text-secondary);font-size:14px">Нет продуктов для этой отрасли</p>'; return; }
-
-  // Продукты с бандлами в этой отрасли
   const withBundles = new Set(allBundles.filter(b => b.industry.includes(selectedIndustry)).map(b => b.product));
   const sorted = products.sort((a,b) => (withBundles.has(b)?1:0) - (withBundles.has(a)?1:0));
-
   sorted.forEach(name => {
     const has = withBundles.has(name);
     const pInfo = allProducts.find(p => p.name === name);
-    const div = document.createElement('div');
-    div.className = 'checkbox-item';
-    div.style.cursor = has ? 'pointer' : 'default';
+    const div = document.createElement('div'); div.className = 'checkbox-item'; div.style.cursor = has?'pointer':'default';
     if (!has) div.style.opacity = '0.6';
     const nameHtml = pInfo?.link ? `<a href="${pInfo.link}" target="_blank" class="product-link" onclick="event.stopPropagation()">${name} ↗</a>` : `<span class="product-name">${name}</span>`;
     if (has) {
@@ -334,21 +334,16 @@ function renderProducts() {
 }
 
 function renderBundles() {
-  const grid = document.getElementById('bundles-grid');
-  grid.innerHTML = '';
+  const grid = document.getElementById('bundles-grid'); grid.innerHTML = '';
   if (!selectedIndustry) { grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:40px">Выберите отрасль</p>'; return; }
   const bundles = getBundles(selectedIndustry, selectedProducts);
   if (!bundles.length) { grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:40px">${selectedProducts.length?'Нет бандлов для комбинации':'Нет офферов для отрасли'}</p>`; return; }
   bundles.forEach(b => {
     const sel = selectedBundleIds.includes(b.id);
-    const card = document.createElement('div');
-    card.className = `bundle-card ${sel?'selected':''}`;
+    const card = document.createElement('div'); card.className = `bundle-card ${sel?'selected':''}`;
     card.innerHTML = `
       <div class="bundle-header">
-        <div>
-          <div class="bundle-title">${b.product}</div>
-          <div class="bundle-vendor">${b.vendor}</div>
-        </div>
+        <div><div class="bundle-title">${b.product}</div><div class="bundle-vendor">${b.vendor}</div></div>
       </div>
       <div class="bundle-benefit">${b.benefit}</div>
       ${b.link ? `<div class="card-actions"><a href="${b.link}" target="_blank" class="btn-link" onclick="event.stopPropagation()">Открыть оффер ↗</a></div>` : ''}
