@@ -487,6 +487,7 @@
       });
     }
 
+    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ
     function generateCombinedText(bundleIds) {
       if (bundleIds.length === 0) return '';
       const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
@@ -504,34 +505,29 @@
       
       const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
       
+      // Собираем ВСЕ выгоды в один массив сразу
+      const allBenefits = productEntries.flatMap(([, list]) => list.map(b => b.benefitGen).filter(Boolean));
+
       if (hasRko) {
-        const rkoBundles = byProduct["Расчетный счет"] || [];
         const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
-        
-        const rkoBenefits = rkoBundles.map(b => b.benefitGen).filter(Boolean);
-        const otherBenefits = otherEntries.flatMap(([, list]) => list.map(b => b.benefitGen).filter(Boolean));
         const otherProducts = otherEntries.map(([p]) => p);
         
         let result = `Открой Расчетный счет`;
         
-        if (rkoBenefits.length > 0) {
-          result += ` и получи ${joinWithAnd(rkoBenefits)}`;
+        if (otherProducts.length > 0) {
+          result += ` и подключи ${joinWithAnd(otherProducts)}`;
         }
         
-        if (otherProducts.length > 0) {
-          const otherList = joinWithAnd(otherProducts);
-          result = result.replace('Открой Расчетный счет', `Открой Расчетный счет и подключи ${otherList}`);
-          
-          if (otherBenefits.length > 0) {
-            result += ` и получи ${joinWithAnd(otherBenefits)}`;
-          }
+        // Добавляем все выгоды ОДИН раз в конце
+        if (allBenefits.length > 0) {
+          result += ` и получи ${joinWithAnd(allBenefits)}`;
         }
         return result;
       }
       
+      // Сценарий без Расчетного счета
       const allProductsList = productEntries.map(([p]) => p);
       const firstAction = productEntries[0][1][0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
-      const allBenefits = productEntries.flatMap(([, list]) => list.map(b => b.benefitGen).filter(Boolean));
       
       return `${firstAction} ${joinWithAnd(allProductsList)} и получи ${joinWithAnd(allBenefits)}`;
     }
