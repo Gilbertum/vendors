@@ -105,12 +105,7 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 .modal-link { color: var(--border-active); text-decoration: none; font-weight: 500; }
 .modal-link:hover { text-decoration: underline; }
 .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
-.feedback-btn {
-  position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: var(--text-dark);
-  border: none; border-radius: 50px; padding: 14px 24px; font-size: 15px; font-weight: 600;
-  cursor: pointer; box-shadow: 0 4px 16px rgba(255, 221, 45, 0.4);
-  display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 100;
-}
+.feedback-btn { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: var(--text-dark); border: none; border-radius: 50px; padding: 14px 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(255, 221, 45, 0.4); display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 100; }
 .feedback-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 221, 45, 0.5); }
 .feedback-btn::before { content: "💬"; font-size: 18px; }
 @media (max-width: 1024px) {
@@ -190,8 +185,7 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
     </div>
   </div>
 </div>
-<a href="https://forms.yandex.ru/your-survey-link" target="_blank" rel="noopener noreferrer" class="feedback-btn">Оставить отзыв</a>
-
+<button class="feedback-btn" id="feedback-btn">Оставить отзыв</button>
 <script>
 // 🔗 Ссылки на CSV-файлы из Google Sheets
 const CSV_URLS = {
@@ -199,7 +193,7 @@ const CSV_URLS = {
   PRODUCTS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3BvjUqCxgtunnRNbJlX0D9T7nGowBNWf9C5ybNes6MFdYYvTs6M4i7HT0nlXDFsa3PvNN5qJcOvuz/pub?output=csv'
 };
 
-// 🗂️ Маппинг колонок CSV → внутренние поля
+// 🗂️ Маппинг колонок CSV → внутренние поля (обновлённый)
 const CSV_MAP = {
   PRODUCTS: {
     industry: 'industry',
@@ -211,11 +205,11 @@ const CSV_MAP = {
     industry: 'industry',   // "Стройка, IT" (через запятую)
     product: 'product',
     id: 'ID',
-    vendor: 'vendor',       // ← Название вендора
-    benefit: 'benefit',     // ← Короткая выгода для отображения
-    benefitGen: 'benefit',  // ← Для генерации текста
-    details: 'desc',        // ← Подробные условия
-    link: 'url_offer',      // ← Ссылка на оффер
+    vendor: 'vendor',       // ← название вендора
+    benefit: 'benefit',     // ← короткая выгода для отображения
+    benefitGen: 'benefit',  // для генерации текста
+    details: 'desc',        // подробные условия
+    link: 'url_offer',      // ссылка на оффер
     fullScript: ''          // генерируется динамически
   }
 };
@@ -287,6 +281,7 @@ async function loadData() {
     const bundlesText = await bundlesRes.text();
     const productsText = await productsRes.text();
     
+    // Парсим CSV
     const rawBundles = parseCSV(bundlesText);
     const rawProducts = parseCSV(productsText);
     
@@ -329,7 +324,6 @@ async function loadData() {
     document.getElementById('bundles-grid').innerHTML = 
       `<p style="grid-column:1/-1;text-align:center;color:#c00;padding:20px;">Не удалось загрузить данные. Проверьте подключение к интернету.</p>`;
     document.getElementById('industry-select').innerHTML = '<option value="">Ошибка загрузки</option>';
-    document.getElementById('industry-select').disabled = false;
     return false;
   }
 }
@@ -610,7 +604,12 @@ function setupEventListeners() {
   });
 
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
-  // Кнопка фидбека теперь обычная ссылка в HTML, обработчик не нужен
+  
+  // 🔗 Обработчик кнопки фидбека — вставь свою ссылку вместо заглушки
+  document.getElementById('feedback-btn').addEventListener('click', () => {
+    window.open('https://forms.yandex.ru/your-survey-link', '_blank', 'noopener,noreferrer');
+    // Или для прямой ссылки в HTML замени кнопку на <a> и удали этот обработчик
+  });
 }
 
 // 🚀 Инициализация
