@@ -193,24 +193,24 @@ const CSV_URLS = {
   PRODUCTS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3BvjUqCxgtunnRNbJlX0D9T7nGowBNWf9C5ybNes6MFdYYvTs6M4i7HT0nlXDFsa3PvNN5qJcOvuz/pub?output=csv'
 };
 
-// 🗂️ Маппинг колонок CSV → внутренние поля (обновлённый)
+// 🗂️ Маппинг колонок CSV → внутренние поля (ОБНОВЛЁН: разделены ссылки)
 const CSV_MAP = {
   PRODUCTS: {
     industry: 'industry',
     product: 'product',
     desc: 'product_desc',
-    link: 'url_product'
+    link_product: 'url_product'  // ← ссылка на лендинг продукта банка
   },
   BUNDLES: {
-    industry: 'industry',   // "Стройка, IT" (через запятую)
+    industry: 'industry',
     product: 'product',
     id: 'ID',
-    vendor: 'vendor',       // ← название вендора
-    benefit: 'benefit',     // ← короткая выгода для отображения
-    benefitGen: 'benefit',  // для генерации текста
-    details: 'desc',        // подробные условия
-    link: 'url_offer',      // ссылка на оффер
-    fullScript: ''          // генерируется динамически
+    vendor: 'vendor',
+    benefit: 'benefit',
+    benefitGen: 'benefit',
+    details: 'desc',
+    link_vendor: 'url_offer',    // ← ссылка на оффер вендора
+    fullScript: ''
   }
 };
 
@@ -281,25 +281,24 @@ async function loadData() {
     const bundlesText = await bundlesRes.text();
     const productsText = await productsRes.text();
     
-    // Парсим CSV
     const rawBundles = parseCSV(bundlesText);
     const rawProducts = parseCSV(productsText);
     
-    // Маппим продукты
+    // Маппим продукты (используем link_product)
     allProducts = rawProducts.map(row => ({
       industry: row[CSV_MAP.PRODUCTS.industry]?.split(',').map(s => s.trim()).filter(Boolean),
       name: row[CSV_MAP.PRODUCTS.product],
       desc: row[CSV_MAP.PRODUCTS.desc],
-      link: row[CSV_MAP.PRODUCTS.link]
+      link_product: row[CSV_MAP.PRODUCTS.link_product]  // ← новая переменная
     })).filter(p => p.name);
     
-    // Маппим бандлы + генерируем fullScript
+    // Маппим бандлы (используем link_vendor)
     allBundles = rawBundles.map((row, idx) => {
       const industries = row[CSV_MAP.BUNDLES.industry]?.split(',').map(s => s.trim()).filter(Boolean) || [];
       const product = row[CSV_MAP.BUNDLES.product];
       const vendor = row[CSV_MAP.BUNDLES.vendor];
       const benefit = row[CSV_MAP.BUNDLES.benefit];
-      const link = row[CSV_MAP.BUNDLES.link];
+      const link_vendor = row[CSV_MAP.BUNDLES.link_vendor];  // ← новая переменная
       const action = product.toLowerCase().includes('счет') ? 'Открой' : 'Подключи';
       
       return {
@@ -310,7 +309,7 @@ async function loadData() {
         benefit,
         benefitGen: row[CSV_MAP.BUNDLES.benefitGen] || benefit,
         details: row[CSV_MAP.BUNDLES.details] || '',
-        link,
+        link_vendor,  // ← ссылка на оффер вендора
         fullScript: `${action} ${product} и получи ${benefit} от ${vendor}`
       };
     }).filter(b => b.product && b.vendor);
@@ -349,16 +348,16 @@ function getBundles(industry, products) {
   });
 }
 
-// ✨ Генерация HTML для отображения (ссылки в названии вендора + списки)
+// ✨ Генерация HTML для отображения (используем link_vendor для ссылок на вендоров)
 function generateResultHTML(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
   if (bundles.length === 1) {
     const b = bundles[0];
-    // Вшиваем ссылку прямо в название вендора внутри текста
+    // Вшиваем ссылку на вендора прямо в название внутри текста
     const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link}" target="_blank">${b.vendor}</a>`);
+    return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
   }
 
   // 2+ офферов: маркированный список с вводной фразой
@@ -386,7 +385,8 @@ function generateResultHTML(bundleIds) {
 
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
-    html += `<li><a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefitGen || b.benefit}</li>`;
+    // Используем link_vendor для ссылки на оффер
+    html += `<li><a href="${b.link_vendor}" target="_blank">${b.vendor}</a>: ${b.benefitGen || b.benefit}</li>`;
   });
   html += `</ul>`;
   return html;
@@ -450,11 +450,9 @@ function renderProducts() {
     return;
   }
 
-  // Определяем, у каких продуктов ЕСТЬ бандлы в выбранной отрасли
   const bundlesInIndustry = allBundles.filter(b => b.industry.includes(selectedIndustry));
   const productsWithBundles = new Set(bundlesInIndustry.map(b => b.product));
 
-  // Сортируем: сначала продукты с бандлами, потом без
   const sortedProducts = products.sort((a, b) => {
     const aHas = productsWithBundles.has(a) ? 1 : 0;
     const bHas = productsWithBundles.has(b) ? 1 : 0;
@@ -469,8 +467,9 @@ function renderProducts() {
     div.style.cursor = hasBundles ? 'pointer' : 'default';
     if (!hasBundles) div.style.opacity = '0.6';
 
-    const nameHtml = pInfo?.link
-      ? `<a href="${pInfo.link}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>`
+    // Используем link_product для ссылки на продукт банка
+    const nameHtml = pInfo?.link_product
+      ? `<a href="${pInfo.link_product}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>`
       : `<span class="product-name">${prodName}</span>`;
 
     if (hasBundles) {
@@ -526,9 +525,10 @@ function renderBundles() {
     
     const actions = document.createElement('div');
     actions.className = 'card-actions';
-    if (b.link) {
+    // Используем link_vendor для кнопки "Открыть оффер"
+    if (b.link_vendor) {
       const linkBtn = document.createElement('a');
-      linkBtn.href = b.link; linkBtn.target = '_blank'; linkBtn.className = 'btn-link'; linkBtn.textContent = 'Открыть оффер ↗';
+      linkBtn.href = b.link_vendor; linkBtn.target = '_blank'; linkBtn.className = 'btn-link'; linkBtn.textContent = 'Открыть оффер ↗';
       linkBtn.addEventListener('click', (e) => e.stopPropagation());
       actions.appendChild(linkBtn);
     }
@@ -605,10 +605,9 @@ function setupEventListeners() {
 
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
   
-  // 🔗 Обработчик кнопки фидбека — вставь свою ссылку вместо заглушки
+  // 🔗 Обработчик кнопки фидбека — вставь свою ссылку
   document.getElementById('feedback-btn').addEventListener('click', () => {
     window.open('https://forms.yandex.ru/your-survey-link', '_blank', 'noopener,noreferrer');
-    // Или для прямой ссылки в HTML замени кнопку на <a> и удали этот обработчик
   });
 }
 
