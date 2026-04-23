@@ -107,6 +107,7 @@
     .btn-link { background: none; border: none; color: var(--border-active); padding: 8px 0; font-size: 13px; cursor: pointer; text-decoration: none; }
     .btn-link:hover { text-decoration: underline; }
 
+    /* Правая колонка с информацией */
     .result-area {
       background: var(--bg-white); 
       border: none; 
@@ -116,6 +117,33 @@
       top: 20px;
       box-shadow: var(--shadow);
     }
+
+    /* Плашка с важным условием */
+    .info-card {
+      background: var(--bg-page);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--accent);
+    }
+    .info-card h4 {
+      font-size: 14px;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin: 0;
+    }
+    .info-card strong {
+      color: var(--text-primary);
+    }
+
     .result-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
     .result-text { white-space: pre-line; font-size: 15px; color: var(--text-primary); margin-bottom: 16px; min-height: 40px; }
     .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -221,7 +249,15 @@
 
     <div class="bundles-grid" id="bundles-grid"></div>
 
+    <!-- Правая колонка (Sticky) -->
     <div class="result-area" id="result-area">
+      
+      <!-- Новая плашка с условием -->
+      <div class="info-card">
+        <h4>⚠️ Важное условие</h4>
+        <p>Все офферы с витрины партнеров активируются только при наличии <strong>Расчетного счета</strong> в Т-Банке.</p>
+      </div>
+
       <div class="result-title">✅ Описание бандла</div>
       <div class="result-text" id="result-text">Выберите бандлы, чтобы получить готовую формулировку</div>
       <div class="result-actions">
@@ -557,7 +593,7 @@
         
         const benefit = document.createElement('div');
         benefit.className = 'bundle-benefit';
-        benefit.textContent = b.benefit; // Карточка: Именительный падеж, Заглавная
+        benefit.textContent = b.benefit;
         
         const actions = document.createElement('div');
         actions.className = 'card-actions';
