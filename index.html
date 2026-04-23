@@ -105,7 +105,12 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 .modal-link { color: var(--border-active); text-decoration: none; font-weight: 500; }
 .modal-link:hover { text-decoration: underline; }
 .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
-.feedback-btn { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: var(--text-dark); border: none; border-radius: 50px; padding: 14px 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(255, 221, 45, 0.4); display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 100; }
+.feedback-btn {
+  position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: var(--text-dark);
+  border: none; border-radius: 50px; padding: 14px 24px; font-size: 15px; font-weight: 600;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(255, 221, 45, 0.4);
+  display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 100;
+}
 .feedback-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 221, 45, 0.5); }
 .feedback-btn::before { content: "💬"; font-size: 18px; }
 @media (max-width: 1024px) {
@@ -167,6 +172,8 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
     </aside>
   </div>
 </div>
+
+<!-- Модальное окно деталей оффера -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <button class="modal-close" id="modal-close">&times;</button>
@@ -185,7 +192,20 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
     </div>
   </div>
 </div>
+
+<!-- Модальное окно опроса -->
+<div class="modal-overlay" id="feedback-modal">
+  <div class="modal" style="max-width: 900px; padding: 0; overflow: hidden;">
+    <button class="modal-close" id="feedback-modal-close">&times;</button>
+    <iframe src="https://p.tbank.ru/polls/prod/poll-cmobly74g002q0dra49i7ba4n/index.html" 
+            style="width: 100%; height: 700px; border: none; border-radius: 0 0 16px 16px;" 
+            title="Опрос обратной связи" loading="lazy">
+    </iframe>
+  </div>
+</div>
+
 <button class="feedback-btn" id="feedback-btn">Оставить отзыв</button>
+
 <script>
 // 🔗 Ссылки на CSV-файлы из Google Sheets
 const CSV_URLS = {
@@ -193,7 +213,7 @@ const CSV_URLS = {
   PRODUCTS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3BvjUqCxgtunnRNbJlX0D9T7nGowBNWf9C5ybNes6MFdYYvTs6M4i7HT0nlXDFsa3PvNN5qJcOvuz/pub?output=csv'
 };
 
-// 🗂️ Маппинг колонок CSV → внутренние поля
+// 🗂️ Маппинг колонок CSV → внутренние поля (исправлено!)
 const CSV_MAP = {
   PRODUCTS: {
     industry: 'industry',
@@ -202,19 +222,16 @@ const CSV_MAP = {
     link: 'url_product'
   },
   BUNDLES: {
-    industry: 'industry',      // comma-separated: "Стройка, IT"
+    industry: 'industry',
     product: 'product',
     id: 'ID',
     vendor: 'offer',
-    benefit: 'short_desc',
-    benefitGen: 'short_desc',  // используем то же поле
+    benefit: 'short_desc',      // ✅ Короткая выгода для карточек и описания
     details: 'desc',
-    link: 'url_offer',
-    fullScript: ''             // генерируется динамически
+    link: 'url_offer'           // ✅ Ссылка на оффер вендора
   }
 };
 
-// 🌐 Конфигурация описаний отраслей
 const CONFIG = {
   INDUSTRY_DESCS: {
     "Независимый Еком": "Онлайн-продажи через собственный сайт или приложение. Клиент не зависит от маркетплейсов.",
@@ -225,15 +242,13 @@ const CONFIG = {
   }
 };
 
-// 📦 Глобальные данные
 let allBundles = [], allProducts = [], dataLoaded = false;
 let selectedIndustry = "", selectedProducts = [], selectedBundleIds = [];
 
-// 🔧 Простой парсер CSV с поддержкой кавычек и запятых внутри полей
+// 🔧 Парсер CSV
 function parseCSV(text) {
   const lines = [], rows = [];
   let current = '', inQuotes = false;
-  
   for (let i = 0; i < text.length; i++) {
     const char = text[i], next = text[i + 1];
     if (char === '"' && next === '"') { current += '"'; i++; continue; }
@@ -243,10 +258,9 @@ function parseCSV(text) {
     current += char;
   }
   if (current.trim()) lines.push(current);
-  
   lines.forEach(line => {
     if (!line.trim()) return;
-    const row = [], cell = '';
+    const row = [], currentCell = '';
     let currentCell = '', inQ = false;
     for (let i = 0; i < line.length; i++) {
       const c = line[i], n = line[i + 1];
@@ -258,7 +272,6 @@ function parseCSV(text) {
     row.push(currentCell.trim());
     rows.push(row);
   });
-  
   if (rows.length === 0) return [];
   const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g, '_'));
   return rows.slice(1).map(row => {
@@ -268,20 +281,16 @@ function parseCSV(text) {
   });
 }
 
-// 📥 Загрузка и парсинг данных из CSV
+// 📥 Загрузка данных
 async function loadData() {
   try {
     const [bundlesRes, productsRes] = await Promise.all([
       fetch(CSV_URLS.BUNDLES),
       fetch(CSV_URLS.PRODUCTS)
     ]);
-    
     if (!bundlesRes.ok || !productsRes.ok) throw new Error('Ошибка загрузки CSV');
-    
     const bundlesText = await bundlesRes.text();
     const productsText = await productsRes.text();
-    
-    // Парсим CSV
     const rawBundles = parseCSV(bundlesText);
     const rawProducts = parseCSV(productsText);
     
@@ -293,32 +302,23 @@ async function loadData() {
       link: row[CSV_MAP.PRODUCTS.link]
     })).filter(p => p.name);
     
-    // Маппим бандлы + генерируем fullScript
+    // Маппим бандлы (без fullScript — он генерируется на лету)
     allBundles = rawBundles.map((row, idx) => {
       const industries = row[CSV_MAP.BUNDLES.industry]?.split(',').map(s => s.trim()).filter(Boolean) || [];
-      const product = row[CSV_MAP.BUNDLES.product];
-      const vendor = row[CSV_MAP.BUNDLES.vendor];
-      const benefit = row[CSV_MAP.BUNDLES.benefit];
-      const link = row[CSV_MAP.BUNDLES.link];
-      const action = product.toLowerCase().includes('счет') ? 'Открой' : 'Подключи';
-      
       return {
         id: row[CSV_MAP.BUNDLES.id] || `b${idx + 1}`,
         industry: industries,
-        product,
-        vendor,
-        benefit,
-        benefitGen: row[CSV_MAP.BUNDLES.benefitGen] || benefit,
+        product: row[CSV_MAP.BUNDLES.product],
+        vendor: row[CSV_MAP.BUNDLES.vendor],
+        benefit: row[CSV_MAP.BUNDLES.benefit],  // ✅ Только benefit из таблицы
         details: row[CSV_MAP.BUNDLES.details] || '',
-        link,
-        fullScript: `${action} ${product} и получи ${benefit} от ${vendor}`
+        link: row[CSV_MAP.BUNDLES.link]         // ✅ Ссылка из url_offer
       };
-    }).filter(b => b.product && b.vendor);
+    }).filter(b => b.product && b.vendor && b.benefit);
     
     dataLoaded = true;
     console.log(`✓ Загружено: ${allBundles.length} бандлов, ${allProducts.length} продуктов`);
     return true;
-    
   } catch (err) {
     console.error('❌ Ошибка загрузки данных:', err);
     document.getElementById('bundles-grid').innerHTML = 
@@ -335,11 +335,9 @@ function getUniqueIndustries() {
   allProducts.forEach(d => d.industry.forEach(i => inds.add(i)));
   return Array.from(inds).sort();
 }
-
 function getProductsForIndustry(industry) {
   return allProducts.filter(p => p.industry.includes(industry)).map(p => p.name);
 }
-
 function getBundles(industry, products) {
   if (!industry) return [];
   return allBundles.filter(d => {
@@ -349,19 +347,18 @@ function getBundles(industry, products) {
   });
 }
 
-// ✨ Генерация HTML для отображения (ссылки в названии вендора + списки)
+// ✨ Генерация HTML для отображения (исправлено: только benefit + ссылка в вендоре)
 function generateResultHTML(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
   if (bundles.length === 1) {
     const b = bundles[0];
-    // Вшиваем ссылку прямо в название вендора внутри текста
-    const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link}" target="_blank">${b.vendor}</a>`);
+    // Формат: "Открой [продукт] и получи [benefit]" с ссылкой в названии вендора
+    return `Открой ${b.product} и получи <a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefit}`;
   }
 
-  // 2+ офферов: маркированный список с вводной фразой
+  // 2+ офферов: вводная + маркированный список
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -380,23 +377,27 @@ function generateResultHTML(bundleIds) {
     if (otherProducts.length > 0) intro += ` и подключи ${joinWithAnd(otherProducts)}`;
   } else {
     const allProductsList = productEntries.map(([p]) => p);
-    const firstAction = productEntries[0][1][0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
-    intro = `${firstAction} ${joinWithAnd(allProductsList)}`;
+    intro = `Открой ${joinWithAnd(allProductsList)}`;
   }
 
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
-    html += `<li><a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefitGen || b.benefit}</li>`;
+    // ✅ Ссылка в названии вендора, текст только из benefit
+    html += `<li><a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefit}</li>`;
   });
   html += `</ul>`;
   return html;
 }
 
-// 📝 Генерация чистого текста для копирования (без HTML)
+// 📝 Генерация чистого текста для копирования
 function generateResultText(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
-  if (bundles.length === 1) return bundles[0].fullScript;
+  
+  if (bundles.length === 1) {
+    const b = bundles[0];
+    return `Открой ${b.product} и получи ${b.vendor}: ${b.benefit}`;
+  }
 
   const byProduct = {};
   bundles.forEach(b => { 
@@ -407,7 +408,7 @@ function generateResultText(bundleIds) {
   const productEntries = Object.entries(byProduct);
   const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
   const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
-  const allBenefits = productEntries.flatMap(([, list]) => list.map(b => b.benefitGen).filter(Boolean));
+  const allBenefits = productEntries.flatMap(([, list]) => list.map(b => `${b.vendor}: ${b.benefit}`).filter(Boolean));
 
   if (hasRko) {
     const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
@@ -419,8 +420,7 @@ function generateResultText(bundleIds) {
   }
   
   const allProductsList = productEntries.map(([p]) => p);
-  const firstAction = productEntries[0][1][0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
-  return `${firstAction} ${joinWithAnd(allProductsList)} и получи ${joinWithAnd(allBenefits)}`;
+  return `Открой ${joinWithAnd(allProductsList)} и получи ${joinWithAnd(allBenefits)}`;
 }
 
 // 🎨 Рендеринг
@@ -438,23 +438,18 @@ function renderIndustries() {
 function renderProducts() {
   const container = document.getElementById('products-list');
   container.innerHTML = '';
-  
   if (!selectedIndustry) {
     container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Сначала выберите отрасль</p>';
     return;
   }
-  
   const products = getProductsForIndustry(selectedIndustry);
   if (products.length === 0) {
     container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Нет продуктов для этой отрасли</p>';
     return;
   }
 
-  // Определяем, у каких продуктов ЕСТЬ бандлы в выбранной отрасли
   const bundlesInIndustry = allBundles.filter(b => b.industry.includes(selectedIndustry));
   const productsWithBundles = new Set(bundlesInIndustry.map(b => b.product));
-
-  // Сортируем: сначала продукты с бандлами, потом без
   const sortedProducts = products.sort((a, b) => {
     const aHas = productsWithBundles.has(a) ? 1 : 0;
     const bHas = productsWithBundles.has(b) ? 1 : 0;
@@ -499,18 +494,15 @@ function renderProducts() {
 function renderBundles() {
   const grid = document.getElementById('bundles-grid');
   grid.innerHTML = '';
-  
   if (!selectedIndustry) {
     grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">Выберите отрасль, чтобы увидеть доступные бандлы</p>';
     return;
   }
-  
   const bundles = getBundles(selectedIndustry, selectedProducts);
   if (bundles.length === 0) {
     grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">${selectedProducts.length > 0 ? 'Нет бандлов для выбранной комбинации' : 'Для этой отрасли пока нет партнёрских офферов'}</p>`;
     return;
   }
-  
   bundles.forEach(b => {
     const isSelected = selectedBundleIds.includes(b.id);
     const card = document.createElement('div');
@@ -522,11 +514,11 @@ function renderBundles() {
     
     const benefit = document.createElement('div');
     benefit.className = 'bundle-benefit';
-    benefit.textContent = b.benefit;
+    benefit.textContent = b.benefit;  // ✅ Только benefit из таблицы
     
     const actions = document.createElement('div');
     actions.className = 'card-actions';
-    if (b.link) {
+    if (b.link) {  // ✅ Ссылка из url_offer
       const linkBtn = document.createElement('a');
       linkBtn.href = b.link; linkBtn.target = '_blank'; linkBtn.className = 'btn-link'; linkBtn.textContent = 'Открыть оффер ↗';
       linkBtn.addEventListener('click', (e) => e.stopPropagation());
@@ -576,20 +568,23 @@ function setupEventListeners() {
     selectedIndustry = e.target.value;
     selectedProducts = [];
     selectedBundleIds = [];
-    
     const infoEl = document.getElementById('industry-info');
     const descEl = document.getElementById('industry-desc');
     if (selectedIndustry && CONFIG.INDUSTRY_DESCS[selectedIndustry]) {
       descEl.textContent = CONFIG.INDUSTRY_DESCS[selectedIndustry];
       infoEl.classList.add('active');
     } else { infoEl.classList.remove('active'); }
-    
     renderProducts(); renderBundles(); updateResult();
   });
 
+  // Закрытие модальных окон
   document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').classList.remove('active'));
   document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('modal-overlay').classList.remove('active'); });
+  
+  document.getElementById('feedback-modal-close').addEventListener('click', () => document.getElementById('feedback-modal').classList.remove('active'));
+  document.getElementById('feedback-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('feedback-modal').classList.remove('active'); });
 
+  // Копирование
   document.getElementById('copy-btn').addEventListener('click', async () => {
     const textEl = document.getElementById('result-text');
     const text = textEl.dataset.plainText || textEl.textContent;
@@ -604,15 +599,17 @@ function setupEventListeners() {
   });
 
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
-  document.getElementById('feedback-btn').addEventListener('click', () => alert('Форма обратной связи. Напишите нам!'));
+  
+  // ✅ Опрос с iframe
+  document.getElementById('feedback-btn').addEventListener('click', () => {
+    document.getElementById('feedback-modal').classList.add('active');
+  });
 }
 
 // 🚀 Инициализация
 async function init() {
-  // Показываем лоадер
   document.getElementById('bundles-grid').innerHTML = 
     '<div class="loading"><div class="spinner"></div>Загрузка данных...</div>';
-  
   const success = await loadData();
   if (success) {
     renderIndustries();
