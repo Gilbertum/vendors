@@ -612,9 +612,9 @@ function setupEventListeners() {
 }
 
 // 🚀 Инициализация
-async function init() {
-  document.getElementById('bundles-grid').innerHTML = 
-    '<div class="loading"><div class="spinner"></div>Загрузка данных...</div>';
+// async function init() {
+  // document.getElementById('bundles-grid').innerHTML = 
+    // '<div class="loading"><div class="spinner"></div>Загрузка данных...</div>';
   
   const success = await loadData();
   if (success) {
