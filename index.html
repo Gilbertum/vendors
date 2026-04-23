@@ -147,7 +147,6 @@
     .modal-link:hover { text-decoration: underline; }
     .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
 
-    /* Улучшенная кнопка фидбека */
     .feedback-btn {
       position: fixed; 
       bottom: 30px; 
@@ -439,61 +438,43 @@
       const productEntries = Object.entries(byProduct);
       const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
       
+      // Вспомогательная функция для соединения списка через запятые и "и"
+      const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
+      
       if (hasRko) {
         const rkoBundles = byProduct["Расчетный счет"] || [];
         const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
         
         const rkoBenefits = rkoBundles.map(b => b.benefit).filter(Boolean);
-        
-        const otherBenefits = [];
-        const otherProducts = [];
-        otherEntries.forEach(([product, list]) => {
-          otherProducts.push(product);
-          list.forEach(b => {
-            if (b.benefit) otherBenefits.push(b.benefit);
-          });
-        });
+        const otherBenefits = otherEntries.flatMap(([, list]) => list.map(b => b.benefit).filter(Boolean));
+        const otherProducts = otherEntries.map(([p]) => p);
         
         let result = `Открой Расчетный счет`;
         
         if (rkoBenefits.length > 0) {
-          if (rkoBenefits.length === 1) {
-            result += ` и получи ${rkoBenefits[0]}`;
-          } else if (rkoBenefits.length === 2) {
-            result += ` и получи ${rkoBenefits[0]} и ${rkoBenefits[1]}`;
-          } else {
-            const last = rkoBenefits.pop();
-            result += ` и получи ${rkoBenefits.join(', ')} и ${last}`;
-          }
+          result += ` и получи ${joinWithAnd(rkoBenefits)}`;
         }
         
         if (otherProducts.length > 0) {
-          const otherList = otherProducts.length === 1 
-            ? `подключи ${otherProducts[0]}` 
-            : `подключи ${otherProducts.slice(0, -1).join(', ')} и ${otherProducts[otherProducts.length - 1]}`;
-          
-          result = result.replace('Открой Расчетный счет', `Открой Расчетный счет и ${otherList}`);
+          const otherList = joinWithAnd(otherProducts);
+          result = result.replace('Открой Расчетный счет', `Открой Расчетный счет и подключи ${otherList}`);
           
           if (otherBenefits.length > 0) {
-            result += ` и получи ${otherBenefits.join(' и ')}`;
+            result += ` и получи ${joinWithAnd(otherBenefits)}`;
           }
         }
-        
         return result;
       }
       
-      const parts = [];
-      productEntries.forEach(([product, list]) => {
-        const action = list[0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
-        const benefits = list.map(b => b.benefit).filter(Boolean);
-        parts.push({ product, action, benefits });
-      });
+      // Сценарий без Расчетного счета: несколько разных продуктов
+      const allProducts = productEntries.map(([p]) => p);
+      const firstAction = productEntries[0][1][0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
+      const allBenefits = productEntries.flatMap(([, list]) => list.map(b => b.benefit).filter(Boolean));
       
-      if (parts.length === 2) {
-        return `${parts[0].action} ${parts[0].product} и подключи ${parts[1].product} и получи ${[...parts[0].benefits, ...parts[1].benefits].join(' и ')}`;
-      }
+      const productList = joinWithAnd(allProducts);
+      const benefitList = joinWithAnd(allBenefits);
       
-      return bundles[0].fullScript;
+      return `${firstAction} ${productList} и получи ${benefitList}`;
     }
 
     function renderIndustries() {
