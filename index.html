@@ -35,8 +35,8 @@
     .subtitle { color: var(--text-secondary); font-size: 15px; }
 
     .industry-info {
-      background: var(--bg-card); /* Вернули бежевый фон */
-      border: none; /* Убрали бордер */
+      background: var(--bg-card);
+      border: none;
       border-radius: var(--radius); padding: 16px; margin-bottom: 24px; display: none;
     }
     .industry-info.active { display: block; }
@@ -46,7 +46,7 @@
     .selectors { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
     .panel { 
       background: var(--bg-white); 
-      border: none; /* Убрали бордер */
+      border: none;
       border-radius: var(--radius); padding: 20px; 
       box-shadow: var(--shadow);
     }
@@ -72,27 +72,37 @@
     .bundle-card {
       background: var(--bg-white); 
       border-radius: var(--radius);
-      padding: 16px; 
+      padding: 20px; 
       transition: all 0.2s ease; 
       cursor: pointer; 
       position: relative;
-      border: none; /* Убрали бордер */
+      border: none;
     }
     .bundle-card:hover { 
       transform: scale(1.02); 
       box-shadow: var(--shadow-hover);
     }
     .bundle-card.selected { 
-      /* Оставляем белый фон, но добавляем акцентную обводку */
       box-shadow: var(--shadow-selected);
     }
     
     .bundle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
     .bundle-title { font-weight: 600; font-size: 16px; color: var(--text-dark); }
-    .bundle-vendor { font-size: 13px; color: var(--text-secondary); }
-    .bundle-script { font-size: 14px; margin: 8px 0 12px; min-height: 40px; }
+    .bundle-vendor { 
+      font-size: 15px; 
+      color: var(--border-active); 
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .bundle-benefit { 
+      font-size: 14px; 
+      margin: 12px 0; 
+      min-height: 40px;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
     
-    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
     .btn-link { background: none; border: none; color: var(--border-active); padding: 8px 0; font-size: 13px; cursor: pointer; text-decoration: none; }
     .btn-link:hover { text-decoration: underline; }
@@ -137,14 +147,35 @@
     .modal-link:hover { text-decoration: underline; }
     .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
 
+    /* Улучшенная кнопка фидбека */
     .feedback-btn {
-      position: fixed; bottom: 20px; right: 20px;
-      background: var(--accent); color: var(--text-dark);
-      border: none; border-radius: 50%; width: 50px; height: 50px;
-      font-size: 20px; cursor: pointer; box-shadow: var(--shadow);
-      display: flex; align-items: center; justify-content: center;
+      position: fixed; 
+      bottom: 30px; 
+      right: 30px;
+      background: var(--accent); 
+      color: var(--text-dark);
+      border: none; 
+      border-radius: 50px; 
+      padding: 14px 24px;
+      font-size: 15px; 
+      font-weight: 600;
+      cursor: pointer; 
+      box-shadow: 0 4px 16px rgba(255, 221, 45, 0.4);
+      display: flex; 
+      align-items: center; 
+      gap: 8px;
+      transition: all 0.2s ease;
+      z-index: 100;
     }
-    .feedback-btn:hover { background: var(--accent-hover); }
+    .feedback-btn:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 221, 45, 0.5);
+    }
+    .feedback-btn::before {
+      content: "💬";
+      font-size: 18px;
+    }
 
     @media (max-width: 768px) {
       .selectors { grid-template-columns: 1fr; }
@@ -153,6 +184,12 @@
       .card-actions { flex-direction: column; }
       .btn { width: 100%; }
       .result-actions { flex-direction: column; }
+      .feedback-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -214,7 +251,7 @@
     </div>
   </div>
 
-  <button class="feedback-btn" id="feedback-btn" title="Оставить отзыв">💬</button>
+  <button class="feedback-btn" id="feedback-btn">Оставить отзыв</button>
 
   <script>
     const BUNDLES_DATA = [
@@ -223,7 +260,8 @@
         industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"],
         product: "Расчетный счет",
         vendor: "Яндекс Директ",
-        script: "Открой Расчетный счет и получи 10.000 руб на запуск рекламы в Яндекс Директе",
+        fullScript: "Открой Расчетный счет и получи 10.000 руб на запуск рекламы в Яндекс Директе",
+        benefit: "10.000 руб на запуск рекламы",
         details: "Яндекс Директ — сервис привлечения клиентов в Поиске, Картах и Рекламной сети Яндекса. Получить промокод могут только новые клиенты Яндекс Директа, у которых не было учетной записи в сервисе. Для одного ИНН доступен только один промокод. Он действует 30 календарных дней с момента получения, заменить или продлить его срок нельзя. Полные условия акции: https://yandex.ru/adv/actions/",
         link: "https://www.tbank.ru/business/partners/online/yadirect/"
       },
@@ -232,7 +270,8 @@
         industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"],
         product: "Расчетный счет",
         vendor: "HeadHunter",
-        script: "Открой Расчетный счет и получи 30 дней бесплатного размещения вакансии на HeadHunter с тарифом \"Стандарт.Плюс\"",
+        fullScript: "Открой Расчетный счет и получи 30 дней бесплатного размещения вакансии на HeadHunter с тарифом \"Стандарт.Плюс\"",
+        benefit: "30 дней бесплатного размещения вакансии с тарифом \"Стандарт.Плюс\"",
         details: "HeadHunter — крупнейшая в России площадка для поиска сотрудников. Предложение действует для новых клиентов, которые ранее не пользовались услугами компании. Принять участие в акции могут только прямые работодатели — не кадровые и не рекрутинговые агентства. Полные условия акции: https://kaluga.hh.ru/article/30679",
         link: "https://www.tbank.ru/business/partners/hr/hh/"
       },
@@ -241,7 +280,8 @@
         industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"],
         product: "Зарплатный проект",
         vendor: "HeadHunter",
-        script: "Подключи Зарплатный проект и получи 30 дней бесплатного размещения вакансии на HeadHunter с тарифом \"Стандарт.Плюс\"",
+        fullScript: "Подключи Зарплатный проект и получи 30 дней бесплатного размещения вакансии на HeadHunter с тарифом \"Стандарт.Плюс\"",
+        benefit: "30 дней бесплатного размещения вакансии с тарифом \"Стандарт.Плюс\"",
         details: "HeadHunter — крупнейшая в России площадка для поиска сотрудников. Предложение действует для новых клиентов, которые ранее не пользовались услугами компании. Принять участие в акции могут только прямые работодатели — не кадровые и не рекрутинговые агентства. Полные условия акции: https://kaluga.hh.ru/article/30679",
         link: "https://www.tbank.ru/business/partners/hr/hh/"
       },
@@ -250,7 +290,8 @@
         industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"],
         product: "Расчетный счет",
         vendor: "Яндекс Бизнес",
-        script: "Открой Расчетный счет и получи 10 000 ₽ на первый запуск Рекламной подписки в Яндекс Бизнесе",
+        fullScript: "Открой Расчетный счет и получи 10 000 ₽ на первый запуск Рекламной подписки в Яндекс Бизнесе",
+        benefit: "10 000 ₽ на первый запуск Рекламной подписки",
         details: "Рекламная подписка от Яндекс Бизнеса автоматически создает и настраивает объявления. А также запускает рекламу сразу на нескольких площадках: в поиске Яндекса, Картах и на сайтах партнеров Рекламной сети Яндекса. Если сайта еще нет, его можно создать в Яндекс Бизнесе или в Конструкторе сайтов ТБанка. Сервис автоматически собирает страницу из информации в профиле пользователя.",
         link: "https://www.tbank.ru/business/partners/marketing/yaonline/"
       },
@@ -259,7 +300,8 @@
         industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"],
         product: "Расчетный счет",
         vendor: "Контур.Диадок",
-        script: "Открой Расчетный счет и получи скидку 15% на первую оплату тарифа в Контур Диадок",
+        fullScript: "Открой Расчетный счет и получи скидку 15% на первую оплату тарифа в Контур Диадок",
+        benefit: "скидку 15% на первую оплату тарифа",
         details: "Контур. Диадок — система обмена электронными документами с контрагентами. Предложение действует только для новых клиентов, кто ранее не пользовался Контур. Диадоком. Скидка 15% предоставляется на пакеты исходящих документов по промокоду. Акционные тарифные планы: «250 документов», «600 документов», «1200 документов» и «3000 документов».",
         link: "https://www.tbank.ru/business/partners/management/konturdiadok/"
       },
@@ -268,7 +310,8 @@
         industry: ["Независимый Еком"],
         product: "Интернет-эквайринг",
         vendor: "CloudKassir",
-        script: "Открой Интернет-эквайринг и получи скидку 12 000 ₽ на первый год обслуживания кассы CloudKassir",
+        fullScript: "Подключи Интернет-эквайринг и получи скидку 12 000 ₽ на первый год обслуживания кассы CloudKassir",
+        benefit: "скидку 12 000 ₽ на первый год обслуживания кассы",
         details: "Готовое решение для интернет-магазинов: возьмите онлайн-кассу в аренду и сразу работайте по 54-ФЗ. Бесплатная регистрация в налоговой, скидка 12 000 ₽ на первый год обслуживания кассы.",
         link: "https://www.tbank.ru/business/partners/online/cloudkassir/"
       },
@@ -277,7 +320,8 @@
         industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка"],
         product: "Расчетный счет",
         vendor: "Авито (Товары)",
-        script: "Открой Расчетный счет и получи 7.000 бонусов на оплату услуг по продвижению на Авито в категории «Товары»",
+        fullScript: "Открой Расчетный счет и получи 7.000 бонусов на оплату услуг по продвижению на Авито в категории «Товары»",
+        benefit: "7.000 бонусов на оплату услуг по продвижению в категории «Товары»",
         details: "Авито — российская онлайн-доска объявлений. Авито дарит 7000 бонусов новым клиентам на оплату услуг по продвижению в категории «Товары». Авито предлагает три тарифа на выбор: «Базовый», «Расширенный» и «Максимальный». С ними бизнес получает доступ к профессиональному личному кабинету и дополнительные преимущества, например, автоматическую публикацию объявлений и аналитику спроса. Срок действия предложения — до 31 декабря 2026 года. Предложение доступно клиентам, которые подключили тариф «Расширенный» или «Максимальный» в категории «Товары» в течение 30 дней после заполнения заявки. Для получения бонуса клиенту нужно авторизоваться в личном кабинете Авито с указанием ИНН. Полные условия акции: https://www.avito.ru/legal/promo/bonuses-tariff-connection",
         link: "https://www.tbank.ru/business/partners/marketplaces/avito/"
       },
@@ -286,7 +330,8 @@
         industry: ["Зависимый Еком"],
         product: "Селлер",
         vendor: "WBarcode",
-        script: "Подключи Селлер и получи скидку 50% на подписку на сервис для генерации этикеток",
+        fullScript: "Подключи Селлер и получи скидку 50% на подписку на сервис для генерации этикеток",
+        benefit: "скидку 50% на подписку на сервис для генерации этикеток",
         details: "Сервис WBarcode помогает продавцам на маркетплейсах быстро создавать наклейки со штрихкодами. В WBarcode продавец один раз заполняет поля в форме: штрихкод, артикул, цвет, размер и необходимое количество наклеек. Затем сразу отправляет их на печать. В аналогичных сервисах нужно заполнять шаблоны в Word и Excel и добавлять текст для каждой наклейки. Форматы штрихкодов, которые делает WBarcode, принимают Ozon и Wildberries, поэтому продавцу не нужно переживать, что из-за нечитаемых наклеек придется снимать товар с маркетплейса и переделывать их. Продавец может указать специальный API-ключ, и информация о товарах автоматически подгрузится в личный кабинет сервиса WBarcode из кабинетов маркетплейсов.",
         link: "https://www.tbank.ru/business/partners/marketplaces/wbarcode/"
       },
@@ -295,7 +340,8 @@
         industry: ["Розница"],
         product: "Расчетный счет",
         vendor: "Авито (Услуги)",
-        script: "Открой Расчетный счет и получи 100% кэшбэк бонусами на оплату услуг по продвижению на Авито в категории «Услуги»",
+        fullScript: "Открой Расчетный счет и получи 100% кэшбэк бонусами на оплату услуг по продвижению на Авито в категории «Услуги»",
+        benefit: "100% кэшбэк бонусами на оплату услуг по продвижению в категории «Услуги»",
         details: "Авито — онлайн-сервис для размещения объявлений. Авито дарит 100% кэшбэк бонусами новым клиентам на оплату услуг по продвижению в категории «Услуги». Получить бонус может пользователь, который отвечает одному из критериев: 1. до 1 июля 2024 года не был зарегистрирован на Авито; 2. не размещал на Авито за плату объявления, не покупал тариф и услуги продвижения в Услугах в течение последних 180 календарных дней до даты подачи заявки на участие в акции. Бесплатные размещения, доступные в рамках лимитов, не учитываются. Срок подачи заявок на участие в акции — до 31 декабря 2026 года. Бонусы начисляются на кошелек на Авито в течение 7 рабочих дней с момента выполнения всех условий акции. Бонусы действуют в течение двух недель с момента начисления. 1 бонус равен 1 ₽. Бонусы не могут быть заменены на деньги. Принять участие в акции можно один раз. Бонусы можно использовать для оплаты не более 99% стоимости услуг продвижения объявлений на Авито. Бонусы не могут быть использованы для оплаты услуг продвижения за комиссию в категориях «Недвижимость» и «Товары». Полные условия акции: https://www.avito.ru/legal/promo/services-cashback-100",
         link: "https://www.tbank.ru/business/partners/marketplaces/avitouslugi/"
       }
@@ -378,14 +424,12 @@
       });
     }
 
-    // 🎯 НОВАЯ ЛОГИКА ГЕНЕРАЦИИ ТЕКСТА
     function generateCombinedText(bundleIds) {
       if (bundleIds.length === 0) return '';
       const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
       if (bundles.length === 0) return '';
-      if (bundles.length === 1) return bundles[0].script;
+      if (bundles.length === 1) return bundles[0].fullScript;
       
-      // Группируем по продукту
       const byProduct = {};
       bundles.forEach(b => {
         if (!byProduct[b.product]) byProduct[b.product] = [];
@@ -393,52 +437,23 @@
       });
       
       const productEntries = Object.entries(byProduct);
-      
-      // Если выбран ОДИН продукт с несколькими офферами
-      if (productEntries.length === 1) {
-        const [product, list] = productEntries[0];
-        const action = list[0].script.includes('Открой') ? 'Открой' : 'Подключи';
-        const benefits = list.map(b => {
-          const parts = b.script.split(' и получи ');
-          return parts.length > 1 ? parts[1] : '';
-        }).filter(Boolean);
-        
-        if (benefits.length === 2) {
-          return `${action} ${product} и получи ${benefits[0]} и ${benefits[1]}`;
-        } else if (benefits.length > 2) {
-          const last = benefits.pop();
-          return `${action} ${product} и получи ${benefits.join(', ')} и ${last}`;
-        } else {
-          return list[0].script;
-        }
-      }
-      
-      // Если выбраны РАЗНЫЕ продукты
-      // 🎯 "Расчетный счет" всегда идет первым, независимо от порядка выбора
       const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
       
       if (hasRko) {
         const rkoBundles = byProduct["Расчетный счет"] || [];
         const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
         
-        // Собираем бонусы от Расчетного счета
-        const rkoBenefits = rkoBundles.map(b => {
-          const parts = b.script.split(' и получи ');
-          return parts.length > 1 ? parts[1] : '';
-        }).filter(Boolean);
+        const rkoBenefits = rkoBundles.map(b => b.benefit).filter(Boolean);
         
-        // Собираем бонусы от других продуктов
         const otherBenefits = [];
         const otherProducts = [];
         otherEntries.forEach(([product, list]) => {
           otherProducts.push(product);
           list.forEach(b => {
-            const parts = b.script.split(' и получи ');
-            if (parts.length > 1) otherBenefits.push(parts[1]);
+            if (b.benefit) otherBenefits.push(b.benefit);
           });
         });
         
-        // Формируем финальную строку
         let result = `Открой Расчетный счет`;
         
         if (rkoBenefits.length > 0) {
@@ -453,12 +468,10 @@
         }
         
         if (otherProducts.length > 0) {
-          const otherAction = otherEntries.length === 1 ? 'подключи' : 'подключи';
           const otherList = otherProducts.length === 1 
-            ? `${otherAction} ${otherProducts[0]}` 
-            : `${otherAction} ${otherProducts.slice(0, -1).join(', ')} и ${otherProducts[otherProducts.length - 1]}`;
+            ? `подключи ${otherProducts[0]}` 
+            : `подключи ${otherProducts.slice(0, -1).join(', ')} и ${otherProducts[otherProducts.length - 1]}`;
           
-          // Вставляем "и подключи..." после "Открой Расчетный счет"
           result = result.replace('Открой Расчетный счет', `Открой Расчетный счет и ${otherList}`);
           
           if (otherBenefits.length > 0) {
@@ -469,14 +482,10 @@
         return result;
       }
       
-      // Если "Расчетный счет" не выбран — стандартная логика для разных продуктов
       const parts = [];
       productEntries.forEach(([product, list]) => {
-        const action = list[0].script.includes('Открой') ? 'Открой' : 'Подключи';
-        const benefits = list.map(b => {
-          const p = b.script.split(' и получи ');
-          return p.length > 1 ? p[1] : '';
-        }).filter(Boolean);
+        const action = list[0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
+        const benefits = list.map(b => b.benefit).filter(Boolean);
         parts.push({ product, action, benefits });
       });
       
@@ -484,7 +493,7 @@
         return `${parts[0].action} ${parts[0].product} и подключи ${parts[1].product} и получи ${[...parts[0].benefits, ...parts[1].benefits].join(' и ')}`;
       }
       
-      return bundles[0].script;
+      return bundles[0].fullScript;
     }
 
     function renderIndustries() {
@@ -554,11 +563,16 @@
         
         const header = document.createElement('div');
         header.className = 'bundle-header';
-        header.innerHTML = `<div><div class="bundle-title">${b.product}</div><div class="bundle-vendor">${b.vendor}</div></div>`;
+        header.innerHTML = `
+          <div>
+            <div class="bundle-title">${b.product}</div>
+            <div class="bundle-vendor">${b.vendor}</div>
+          </div>
+        `;
         
-        const script = document.createElement('div');
-        script.className = 'bundle-script';
-        script.textContent = b.script;
+        const benefit = document.createElement('div');
+        benefit.className = 'bundle-benefit';
+        benefit.textContent = b.benefit;
         
         const actions = document.createElement('div');
         actions.className = 'card-actions';
@@ -573,7 +587,7 @@
         }
         
         card.appendChild(header);
-        card.appendChild(script);
+        card.appendChild(benefit);
         if (actions.children.length > 0) card.appendChild(actions);
         
         card.addEventListener('click', (e) => {
@@ -615,7 +629,7 @@
 
     function openModal(bundle) {
       document.getElementById('modal-title').textContent = `${bundle.product} + ${bundle.vendor}`;
-      document.getElementById('modal-script').textContent = bundle.script;
+      document.getElementById('modal-script').textContent = bundle.fullScript;
       document.getElementById('modal-details').textContent = bundle.details || 'Детали не указаны';
       const linkEl = document.getElementById('modal-link');
       if (bundle.link) {
