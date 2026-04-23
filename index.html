@@ -6,62 +6,37 @@
 <title>Матрица бандлов | Подбор офферов</title>
 <style>
 :root {
-  --bg-page: #f1eee8;
-  --bg-card: #e4d7c1;
-  --bg-white: #ffffff;
-  --bg-result: #f1eee8;
-  --text-primary: #333333;
-  --text-secondary: #8d6040;
-  --text-dark: #212121;
-  --accent: #ffdd2d;
-  --accent-hover: #ffe560;
-  --border: #ddc7a4;
-  --border-active: #b58b60;
-  --success-bg: #bedd9a;
-  --success-text: #73b077;
-  --radius: 12px;
-  --shadow: 0 4px 12px rgba(33, 33, 33, 0.08);
-  --shadow-hover: 0 8px 24px rgba(33, 33, 33, 0.12);
-  --shadow-selected: 0 0 0 2px var(--accent), 0 4px 12px rgba(255, 221, 45, 0.3);
+  --bg-page: #f1eee8; --bg-card: #e4d7c1; --bg-white: #ffffff;
+  --text-primary: #333333; --text-secondary: #8d6040; --text-dark: #212121;
+  --accent: #ffdd2d; --accent-hover: #ffe560; --border: #ddc7a4; --border-active: #b58b60;
+  --success-bg: #bedd9a; --success-text: #73b077; --radius: 12px;
+  --shadow: 0 4px 12px rgba(33,33,33,0.08); --shadow-hover: 0 8px 24px rgba(33,33,33,0.12);
+  --shadow-selected: 0 0 0 2px var(--accent), 0 4px 12px rgba(255,221,45,0.3);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg-page); color: var(--text-primary); line-height: 1.5; padding: 24px;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-page); color: var(--text-primary); line-height: 1.5; padding: 24px; }
 .container { max-width: 1280px; margin: 0 auto; }
 header { margin-bottom: 24px; }
 h1 { font-size: 28px; color: var(--text-dark); margin-bottom: 4px; }
 .subtitle { color: var(--text-secondary); font-size: 15px; }
-.industry-info {
-  background: var(--bg-card); border: none; border-radius: var(--radius); padding: 16px; margin-bottom: 24px; display: none;
-}
+.industry-info { background: var(--bg-card); border: none; border-radius: var(--radius); padding: 16px; margin-bottom: 24px; display: none; }
 .industry-info.active { display: block; }
 .industry-info h3 { font-size: 16px; color: var(--text-dark); margin-bottom: 8px; }
 .industry-info p { font-size: 14px; color: var(--text-secondary); line-height: 1.4; }
 .selectors { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-.panel {
-  background: var(--bg-white); border: none; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
-}
+.panel { background: var(--bg-white); border: none; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
 .panel h3 { font-size: 16px; margin-bottom: 12px; color: var(--text-dark); }
-select {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text-primary); font-size: 15px; cursor: pointer;
-}
+select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text-primary); font-size: 15px; cursor: pointer; }
 select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 0 0 3px rgba(181,139,96,0.2); }
 .checkbox-group { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
 .checkbox-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; transition: opacity 0.2s; cursor: pointer; }
 .checkbox-item input { width: 18px; height: 18px; accent-color: var(--success-text); cursor: pointer; flex-shrink: 0; }
 .checkbox-item .product-name { font-size: 15px; color: var(--text-primary); }
-.checkbox-item .product-link {
-  color: var(--border-active); text-decoration: none; font-weight: 500; font-size: 15px; margin-left: 4px;
-}
+.checkbox-item .product-link { color: var(--border-active); text-decoration: none; font-weight: 500; font-size: 15px; margin-left: 4px; }
 .checkbox-item .product-link:hover { text-decoration: underline; }
-/* Двухколоночная сетка */
 .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
 .bundles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-.bundle-card {
-  background: var(--bg-white); border-radius: var(--radius); padding: 20px; transition: all 0.2s ease; cursor: pointer; position: relative; border: none;
-}
+.bundle-card { background: var(--bg-white); border-radius: var(--radius); padding: 20px; transition: all 0.2s ease; cursor: pointer; position: relative; border: none; }
 .bundle-card:hover { transform: scale(1.02); box-shadow: var(--shadow-hover); }
 .bundle-card.selected { box-shadow: var(--shadow-selected); }
 .bundle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
@@ -72,17 +47,14 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 .btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
 .btn-link { background: none; border: none; color: var(--border-active); padding: 8px 0; font-size: 13px; cursor: pointer; text-decoration: none; }
 .btn-link:hover { text-decoration: underline; }
-/* Правая панель: всегда видна при скролле */
 .right-sidebar { position: -webkit-sticky; position: sticky; top: 20px; }
 .result-area { background: var(--bg-white); border: none; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
-/* Плашка с условием */
 .info-card { background: var(--bg-page); border-radius: 8px; padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--accent); }
 .info-card h4 { font-size: 14px; color: var(--text-dark); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
 .info-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.4; margin: 0; }
 .info-card strong { color: var(--text-primary); }
 .result-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 .result-text { white-space: pre-line; font-size: 15px; color: var(--text-primary); margin-bottom: 16px; min-height: 40px; }
-/* Стили для маркированного списка и ссылок в описании */
 .result-text ul { margin: 10px 0 10px 20px; padding: 0; list-style-type: disc; }
 .result-text li { margin-bottom: 6px; line-height: 1.5; }
 .result-text a { color: var(--border-active); text-decoration: none; font-weight: 600; transition: opacity 0.2s; }
@@ -93,6 +65,7 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 .btn-copy:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-reset { background: var(--bg-card); border: none; color: var(--text-secondary); padding: 10px 20px; font-size: 14px; }
 .btn-reset:hover { background: #fff; }
+.loading { text-align: center; padding: 40px; color: var(--text-secondary); font-size: 15px; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(33,33,33,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
 .modal-overlay.active { display: flex; }
 .modal { background: var(--bg-white); border: none; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(33,33,33,0.2); position: relative; }
@@ -103,22 +76,11 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
 .modal-link { color: var(--border-active); text-decoration: none; font-weight: 500; }
 .modal-link:hover { text-decoration: underline; }
 .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
-.feedback-btn { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: var(--text-dark); border: none; border-radius: 50px; padding: 14px 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(255, 221, 45, 0.4); display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 100; }
-.feedback-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 221, 45, 0.5); }
+.feedback-btn { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: var(--text-dark); border: none; border-radius: 50px; padding: 14px 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(255,221,45,0.4); display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 100; }
+.feedback-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,221,45,0.5); }
 .feedback-btn::before { content: "💬"; font-size: 18px; }
-@media (max-width: 1024px) {
-  .main-grid { grid-template-columns: 1fr; }
-  .right-sidebar { position: static; margin-top: 24px; }
-  .bundles-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-}
-@media (max-width: 768px) {
-  .selectors { grid-template-columns: 1fr; }
-  .bundles-grid { grid-template-columns: 1fr; }
-  .card-actions { flex-direction: column; }
-  .btn { width: 100%; }
-  .result-actions { flex-direction: column; }
-  .feedback-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 14px; }
-}
+@media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } .right-sidebar { position: static; margin-top: 24px; } .bundles-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+@media (max-width: 768px) { .selectors { grid-template-columns: 1fr; } .bundles-grid { grid-template-columns: 1fr; } .card-actions { flex-direction: column; } .btn { width: 100%; } .result-actions { flex-direction: column; } .feedback-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 14px; } }
 </style>
 </head>
 <body>
@@ -134,28 +96,18 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
   <div class="selectors">
     <div class="panel">
       <h3>1. Отрасль клиента</h3>
-      <select id="industry-select">
-        <option value="">Выберите отрасль</option>
-      </select>
+      <select id="industry-select"><option value="">Загрузка...</option></select>
     </div>
     <div class="panel">
       <h3>2. Продукты банка</h3>
-      <div class="checkbox-group" id="products-list">
-        <p style="color: var(--text-secondary); font-size: 14px;">Сначала выберите отрасль</p>
-      </div>
+      <div class="checkbox-group" id="products-list"><p class="loading">Выберите отрасль</p></div>
     </div>
   </div>
-  <!-- Основная двухколоночная сетка -->
   <div class="main-grid">
-    <div class="left-content">
-      <div class="bundles-grid" id="bundles-grid"></div>
-    </div>
+    <div class="left-content"><div class="bundles-grid" id="bundles-grid"></div></div>
     <aside class="right-sidebar">
       <div class="result-area" id="result-area">
-        <div class="info-card">
-          <h4>⚠️ Важное условие</h4>
-          <p>Все офферы с витрины партнеров активируются только при наличии <strong>Расчетного счета</strong> в Т-Банке.</p>
-        </div>
+        <div class="info-card"><h4>⚠️ Важное условие</h4><p>Все офферы с витрины партнеров активируются только при наличии <strong>Расчетного счета</strong> в Т-Банке.</p></div>
         <div class="result-title">✅ Описание бандла</div>
         <div class="result-text" id="result-text">Выберите бандлы, чтобы получить готовую формулировку</div>
         <div class="result-actions">
@@ -170,75 +122,26 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
   <div class="modal">
     <button class="modal-close" id="modal-close">&times;</button>
     <h3 id="modal-title">Детали оффера</h3>
-    <div class="modal-section">
-      <div class="modal-label">Предложение</div>
-      <div class="modal-text" id="modal-script"></div>
-    </div>
-    <div class="modal-section">
-      <div class="modal-label">Условия и детали</div>
-      <div class="modal-text" id="modal-details"></div>
-    </div>
-    <div class="modal-section">
-      <div class="modal-label">Перейти к офферу</div>
-      <a href="#" target="_blank" class="modal-link" id="modal-link">Открыть на витрине ↗</a>
-    </div>
+    <div class="modal-section"><div class="modal-label">Предложение</div><div class="modal-text" id="modal-script"></div></div>
+    <div class="modal-section"><div class="modal-label">Условия и детали</div><div class="modal-text" id="modal-details"></div></div>
+    <div class="modal-section"><div class="modal-label">Перейти к офферу</div><a href="#" target="_blank" class="modal-link" id="modal-link">Открыть на витрине ↗</a></div>
   </div>
 </div>
 <button class="feedback-btn" id="feedback-btn">Оставить отзыв</button>
+
 <script>
-const BUNDLES_DATA = [
-  { id: "b1", industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"], product: "Расчетный счет", vendor: "Яндекс Директ", fullScript: "Открой Расчетный счет и получи 10.000 руб на запуск рекламы в Яндекс Директе", benefit: "10 000 руб на запуск рекламы", benefitGen: "10 000 руб на запуск рекламы", details: "Яндекс Директ — сервис привлечения клиентов в Поиске, Картах и Рекламной сети Яндекса. Получить промокод могут только новые клиенты Яндекс Директа, у которых не было учетной записи в сервисе. Для одного ИНН доступен только один промокод. Он действует 30 календарных дней с момента получения, заменить или продлить его срок нельзя. Полные условия акции: https://yandex.ru/adv/actions/", link: "https://www.tbank.ru/business/partners/online/yadirect/" },
-  { id: "b2", industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"], product: "Расчетный счет", vendor: "HeadHunter", fullScript: "Открой Расчетный счет и получи 30 дней бесплатного размещения вакансии на HeadHunter с тарифом \"Стандарт.Плюс\"", benefit: "30 дней бесплатного размещения вакансии с тарифом «Стандарт.Плюс»", benefitGen: "30 дней бесплатного размещения вакансии с тарифом «Стандарт.Плюс»", details: "HeadHunter — крупнейшая в России площадка для поиска сотрудников. Предложение действует для новых клиентов, которые ранее не пользовались услугами компании. Принять участие в акции могут только прямые работодатели — не кадровые и не рекрутинговые агентства. Полные условия акции: https://kaluga.hh.ru/article/30679", link: "https://www.tbank.ru/business/partners/hr/hh/" },
-  { id: "b3", industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"], product: "Зарплатный проект", vendor: "HeadHunter", fullScript: "Подключи Зарплатный проект и получи 30 дней бесплатного размещения вакансии на HeadHunter с тарифом \"Стандарт.Плюс\"", benefit: "30 дней бесплатного размещения вакансии с тарифом «Стандарт.Плюс»", benefitGen: "30 дней бесплатного размещения вакансии с тарифом «Стандарт.Плюс»", details: "HeadHunter — крупнейшая в России площадка для поиска сотрудников. Предложение действует для новых клиентов, которые ранее не пользовались услугами компании. Принять участие в акции могут только прямые работодатели — не кадровые и не рекрутинговые агентства. Полные условия акции: https://kaluga.hh.ru/article/30679", link: "https://www.tbank.ru/business/partners/hr/hh/" },
-  { id: "b4", industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"], product: "Расчетный счет", vendor: "Яндекс Бизнес", fullScript: "Открой Расчетный счет и получи 10 000 ₽ на первый запуск Рекламной подписки в Яндекс Бизнесе", benefit: "10 000 ₽ на первый запуск Рекламной подписки", benefitGen: "10 000 ₽ на первый запуск Рекламной подписки", details: "Рекламная подписка от Яндекс Бизнеса автоматически создает и настраивает объявления. А также запускает рекламу сразу на нескольких площадках: в поиске Яндекса, Картах и на сайтах партнеров Рекламной сети Яндекса. Если сайта еще нет, его можно создать в Яндекс Бизнесе или в Конструкторе сайтов ТБанка. Сервис автоматически собирает страницу из информации в профиле пользователя.", link: "https://www.tbank.ru/business/partners/marketing/yaonline/" },
-  { id: "b5", industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка", "IT"], product: "Расчетный счет", vendor: "Контур.Диадок", fullScript: "Открой Расчетный счет и получи скидку 15% на первую оплату тарифа в Контур Диадок", benefit: "Скидка 15% на первую оплату тарифа", benefitGen: "скидку 15% на первую оплату тарифа", details: "Контур. Диадок — система обмена электронными документами с контрагентами. Предложение действует только для новых клиентов, кто ранее не пользовался Контур. Диадоком. Скидка 15% предоставляется на пакеты исходящих документов по промокоду. Акционные тарифные планы: «250 документов», «600 документов», «1200 документов» и «3000 документов».", link: "https://www.tbank.ru/business/partners/management/konturdiadok/" },
-  { id: "b6", industry: ["Независимый Еком"], product: "Интернет-эквайринг", vendor: "CloudKassir", fullScript: "Подключи Интернет-эквайринг и получи скидку 12 000 ₽ на первый год обслуживания кассы CloudKassir", benefit: "Скидка 12 000 ₽ на первый год обслуживания кассы", benefitGen: "скидку 12 000 ₽ на первый год обслуживания кассы", details: "Готовое решение для интернет-магазинов: возьмите онлайн-кассу в аренду и сразу работайте по 54-ФЗ. Бесплатная регистрация в налоговой, скидка 12 000 ₽ на первый год обслуживания кассы.", link: "https://www.tbank.ru/business/partners/online/cloudkassir/" },
-  { id: "b7", industry: ["Независимый Еком", "Зависимый Еком", "Розница", "Стройка"], product: "Расчетный счет", vendor: "Авито (Товары)", fullScript: "Открой Расчетный счет и получи 7.000 бонусов на оплату услуг по продвижению на Авито в категории «Товары»", benefit: "7 000 бонусов на оплату услуг по продвижению в категории «Товары»", benefitGen: "7 000 бонусов на оплату услуг по продвижению в категории «Товары»", details: "Авито — российская онлайн-доска объявлений. Авито дарит 7000 бонусов новым клиентам на оплату услуг по продвижению в категории «Товары». Авито предлагает три тарифа на выбор: «Базовый», «Расширенный» и «Максимальный». С ними бизнес получает доступ к профессиональному личному кабинету и дополнительные преимущества, например, автоматическую публикацию объявлений и аналитику спроса. Срок действия предложения — до 31 декабря 2026 года. Предложение доступно клиентам, которые подключили тариф «Расширенный» или «Максимальный» в категории «Товары» в течение 30 дней после заполнения заявки. Для получения бонуса клиенту нужно авторизоваться в личном кабинете Авито с указанием ИНН. Полные условия акции: https://www.avito.ru/legal/promo/bonuses-tariff-connection", link: "https://www.tbank.ru/business/partners/marketplaces/avito/" },
-  { id: "b8", industry: ["Зависимый Еком"], product: "Селлер", vendor: "WBarcode", fullScript: "Подключи Селлер и получи скидку 50% на подписку на сервис для генерации этикеток", benefit: "Скидка 50% на подписку на сервис для генерации этикеток", benefitGen: "скидку 50% на подписку на сервис для генерации этикеток", details: "Сервис WBarcode помогает продавцам на маркетплейсах быстро создавать наклейки со штрихкодами. В WBarcode продавец один раз заполняет поля в форме: штрихкод, артикул, цвет, размер и необходимое количество наклеек. Затем сразу отправляет их на печать. В аналогичных сервисах нужно заполнять шаблоны в Word и Excel и добавлять текст для каждой наклейки. Форматы штрихкодов, которые делает WBarcode, принимают Ozon и Wildberries, поэтому продавцу не нужно переживать, что из-за нечитаемых наклеек придется снимать товар с маркетплейса и переделывать их. Продавец может указать специальный API-ключ, и информация о товарах автоматически подгрузится в личный кабинет сервиса WBarcode из кабинетов маркетплейсов.", link: "https://www.tbank.ru/business/partners/marketplaces/wbarcode/" },
-  { id: "b9", industry: ["Розница"], product: "Расчетный счет", vendor: "Авито (Услуги)", fullScript: "Открой Расчетный счет и получи 100% кэшбэк бонусами на оплату услуг по продвижению на Авито в категории «Услуги»", benefit: "100% кэшбэк бонусами на оплату услуг по продвижению в категории «Услуги»", benefitGen: "100% кэшбэк бонусами на оплату услуг по продвижению в категории «Услуги»", details: "Авито — онлайн-сервис для размещения объявлений. Авито дарит 100% кэшбэк бонусами новым клиентам на оплату услуг по продвижению в категории «Услуги». Получить бонус может пользователь, который отвечает одному из критериев: 1. до 1 июля 2024 года не был зарегистрирован на Авито; 2. не размещал на Авито за плату объявления, не покупал тариф и услуги продвижения в Услугах в течение последних 180 календарных дней до даты подачи заявки на участие в акции. Бесплатные размещения, доступные в рамках лимитов, не учитываются. Срок подачи заявок на участие в акции — до 31 декабря 2026 года. Бонусы начисляются на кошелек на Авито в течение 7 рабочих дней с момента выполнения всех условий акции. Бонусы действуют в течение двух недель с момента начисления. 1 бонус равен 1 ₽. Бонусы не могут быть заменены на деньги. Принять участие в акции можно один раз. Бонусы можно использовать для оплаты не более 99% стоимости услуг продвижения объявлений на Авито. Бонусы не могут быть использованы для оплаты услуг продвижения за комиссию в категориях «Недвижимость» и «Товары». Полные условия акции: https://www.avito.ru/legal/promo/services-cashback-100", link: "https://www.tbank.ru/business/partners/marketplaces/avitouslugi/" }
-];
-const PRODUCTS_DATA = [
-  { industry: ["Независимый Еком"], name: "Регистрация бизнеса", desc: "Регистрация бизнеса онлайн — 0 ₽", link: "https://www.tbank.ru/business/registration/" },
-  { industry: ["Независимый Еком"], name: "Расчетный счет", desc: "Бесплатное обслуживание до 2 месяцев", link: "https://www.tbank.ru/business/account/" },
-  { industry: ["Независимый Еком"], name: "Интернет-эквайринг", desc: "Приём оплаты на сайте", link: "https://www.tbank.ru/business/online-acquiring/" },
-  { industry: ["Независимый Еком"], name: "Долями", desc: "Описание", link: "" },
-  { industry: ["Независимый Еком"], name: "Кредиты для бизнеса", desc: "Описание", link: "" },
-  { industry: ["Независимый Еком"], name: "Бухгалтерия", desc: "Описание", link: "" },
-  { industry: ["Независимый Еком"], name: "Овернайт", desc: "Описание", link: "" },
-  { industry: ["Независимый Еком"], name: "Зарплатный проект", desc: "Описание", link: "" },
-  { industry: ["Независимый Еком"], name: "Валютный счет", desc: "Описание", link: "" },
-  { industry: ["Независимый Еком"], name: "Т-Чеки", desc: "Описание", link: "" },
-  { industry: ["Зависимый Еком"], name: "Регистрация бизнеса", desc: "Регистрация бизнеса онлайн — 0 ₽", link: "https://www.tbank.ru/business/registration/" },
-  { industry: ["Зависимый Еком"], name: "Расчетный счет", desc: "Бесплатное обслуживание до 2 месяцев", link: "https://www.tbank.ru/business/account/" },
-  { industry: ["Зависимый Еком"], name: "Кредиты для бизнеса", desc: "Описание", link: "" },
-  { industry: ["Зависимый Еком"], name: "Валютный счет", desc: "Описание", link: "" },
-  { industry: ["Зависимый Еком"], name: "Бухгалтерия", desc: "Описание", link: "" },
-  { industry: ["Зависимый Еком"], name: "Овернайт", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Регистрация бизнеса", desc: "Регистрация бизнеса онлайн — 0 ₽", link: "https://www.tbank.ru/business/registration/" },
-  { industry: ["Розница"], name: "Расчетный счет", desc: "Бесплатное обслуживание до 2 месяцев", link: "https://www.tbank.ru/business/account/" },
-  { industry: ["Розница"], name: "Торговый эквайринг", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Оплата по QR (СБП)", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Зарплатный проект", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Кредиты для бизнеса", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Бухгалтерия", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Продвижение бизнеса (Выгода)", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "POS кредитование", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Овернайт", desc: "Описание", link: "" },
-  { industry: ["Розница"], name: "Pay 2 Phone", desc: "Описание", link: "" },
-  { industry: ["IT"], name: "Регистрация бизнеса", desc: "Регистрация бизнеса онлайн — 0 ₽", link: "https://www.tbank.ru/business/registration/" },
-  { industry: ["IT"], name: "Расчетный счет", desc: "Бесплатное обслуживание до 2 месяцев", link: "https://www.tbank.ru/business/account/" },
-  { industry: ["IT"], name: "Зарплатный проект", desc: "Описание", link: "" },
-  { industry: ["IT"], name: "Кредиты для бизнеса", desc: "Описание", link: "" },
-  { industry: ["IT"], name: "Бухгалтерия", desc: "Описание", link: "" },
-  { industry: ["IT"], name: "Овернайт", desc: "Описание", link: "" },
-  { industry: ["Стройка"], name: "Регистрация бизнеса", desc: "Регистрация бизнеса онлайн — 0 ₽", link: "https://www.tbank.ru/business/registration/" },
-  { industry: ["Стройка"], name: "Расчетный счет", desc: "Бесплатное обслуживание до 2 месяцев", link: "https://www.tbank.ru/business/account/" },
-  { industry: ["Стройка"], name: "Зарплатный проект", desc: "Описание", link: "" },
-  { industry: ["Стройка"], name: "Кредиты для бизнеса", desc: "Описание", link: "" },
-  { industry: ["Стройка"], name: "Бухгалтерия", desc: "Описание", link: "" },
-  { industry: ["Стройка"], name: "Овернайт", desc: "Описание", link: "" },
-  { industry: ["Стройка"], name: "Интернет-эквайринг", desc: "Описание", link: "" }
-];
+// 🔗 Ссылки на CSV
+const CSV_URLS = {
+  bundles: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6efI49YZlwvdIPdFpkwTVisWD9P63E3UJ9XkeWnmxtfXwJPBhjNGWerDmmixbV5aMadBQTjkw1UMq/pub?output=csv',
+  products: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3BvjUqCxgtunnRNbJlX0D9T7nGowBNWf9C5ybNes6MFdYYvTs6M4i7HT0nlXDFsa3PvNN5qJcOvuz/pub?output=csv'
+};
+
+// 🗂️ Карта колонок: CSV → код
+const COLUMN_MAP = {
+  products: { industry: 'industry', name: 'product', desc: 'product_desc', link: 'url_product' },
+  bundles: { id: 'ID', industry: 'industry', product: 'product', vendor: 'offer', fullScript: 'short_desc', benefit: 'benefit', details: 'desc', link: 'url_offer' }
+};
+
 const CONFIG = {
   INDUSTRY_DESCS: {
     "Независимый Еком": "Онлайн-продажи через собственный сайт или приложение. Клиент не зависит от маркетплейсов.",
@@ -250,18 +153,92 @@ const CONFIG = {
 };
 
 let selectedIndustry = "", selectedProducts = [], selectedBundleIds = [];
-let allBundles = BUNDLES_DATA;
-let allProducts = PRODUCTS_DATA;
+let allBundles = [], allProducts = [], dataLoaded = false;
 
+// 🧹 Простой парсер CSV с поддержкой кавычек и переносов
+function parseCSV(text) {
+  const rows = [], re = /(?:,|\r?\n|^)(?:"([^"]*(?:""[^"]*)*)"|([^",\r\n]*))/g;
+  let match, row = [], col = 0;
+  while ((match = re.exec(text)) !== null) {
+    const val = (match[1] !== undefined ? match[1].replace(/""/g, '"') : match[2]).trim();
+    if (match[0].startsWith('\n') || match[0].startsWith('\r\n') || re.lastIndex === text.length) {
+      row.push(val); if (row.some(c => c)) rows.push(row); row = []; col = 0;
+    } else { row.push(val); col++; }
+  }
+  if (row.length > 1 && row.some(c => c)) rows.push(row);
+  return rows;
+}
+
+// 🔄 Преобразование строки отраслей "А, Б, В" → массив
+function parseIndustries(str) {
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// 📥 Загрузка и маппинг данных из CSV
+async function loadCSVData() {
+  try {
+    const [bundlesRes, productsRes] = await Promise.all([
+      fetch(CSV_URLS.bundles), fetch(CSV_URLS.products)
+    ]);
+    const [bundlesText, productsText] = await Promise.all([
+      bundlesRes.text(), productsRes.text()
+    ]);
+
+    // Парсим бандлы
+    const bundlesRows = parseCSV(bundlesText);
+    const bundlesHeader = bundlesRows[0].map(h => h.toLowerCase().trim());
+    allBundles = bundlesRows.slice(1).map(row => {
+      const obj = {};
+      bundlesHeader.forEach((col, i) => obj[col] = row[i] || '');
+      return {
+        id: obj[COLUMN_MAP.bundles.id] || `b_${Math.random().toString(36).slice(2,8)}`,
+        industry: parseIndustries(obj[COLUMN_MAP.bundles.industry]),
+        product: obj[COLUMN_MAP.bundles.product],
+        vendor: obj[COLUMN_MAP.bundles.vendor],
+        fullScript: obj[COLUMN_MAP.bundles.fullScript],
+        benefit: obj[COLUMN_MAP.bundles.benefit],
+        benefitGen: obj[COLUMN_MAP.bundles.benefit],
+        details: obj[COLUMN_MAP.bundles.details],
+        link: obj[COLUMN_MAP.bundles.link]
+      };
+    }).filter(b => b.product && b.vendor);
+
+    // Парсим продукты
+    const productsRows = parseCSV(productsText);
+    const productsHeader = productsRows[0].map(h => h.toLowerCase().trim());
+    allProducts = productsRows.slice(1).map(row => {
+      const obj = {};
+      productsHeader.forEach((col, i) => obj[col] = row[i] || '');
+      return {
+        industry: parseIndustries(obj[COLUMN_MAP.products.industry]),
+        name: obj[COLUMN_MAP.products.name],
+        desc: obj[COLUMN_MAP.products.desc],
+        link: obj[COLUMN_MAP.products.link]
+      };
+    }).filter(p => p.name);
+
+    dataLoaded = true;
+    renderIndustries();
+    console.log(`✓ Загружено: ${allBundles.length} бандлов, ${allProducts.length} продуктов`);
+  } catch (err) {
+    console.error('❌ Ошибка загрузки CSV:', err);
+    document.getElementById('industry-select').innerHTML = '<option value="">Ошибка загрузки данных</option>';
+    document.getElementById('products-list').innerHTML = '<p style="color:var(--success-text)">Проверьте подключение к интернету</p>';
+  }
+}
+
+// 🔍 Уникальные отрасли
 function getUniqueIndustries() {
   const inds = new Set();
   allBundles.forEach(d => d.industry.forEach(i => inds.add(i)));
   allProducts.forEach(d => d.industry.forEach(i => inds.add(i)));
   return Array.from(inds).sort();
 }
+
 function getProductsForIndustry(industry) {
-  return allProducts.filter(p => p.industry.includes(industry)).map(p => p.name);
+  return [...new Set(allProducts.filter(p => p.industry.includes(industry)).map(p => p.name))];
 }
+
 function getBundles(industry, products) {
   if (!industry) return [];
   return allBundles.filter(d => {
@@ -277,18 +254,14 @@ function generateResultHTML(bundleIds) {
   if (bundles.length === 0) return '';
   if (bundles.length === 1) {
     const b = bundles[0];
-    // Зашиваем ссылку прямо в название вендора внутри текста
     const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link}" target="_blank">${b.vendor}</a>`);
   }
-
-  // 2+ офферов
   const byProduct = {};
   bundles.forEach(b => { if (!byProduct[b.product]) byProduct[b.product] = []; byProduct[b.product].push(b); });
   const productEntries = Object.entries(byProduct);
   const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
   const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
-
   let intro = '';
   if (hasRko) {
     const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
@@ -300,7 +273,6 @@ function generateResultHTML(bundleIds) {
     const firstAction = productEntries[0][1][0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
     intro = `${firstAction} ${joinWithAnd(allProductsList)}`;
   }
-
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
     html += `<li><a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefitGen || b.benefit}</li>`;
@@ -314,14 +286,12 @@ function generateResultText(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   if (bundles.length === 1) return bundles[0].fullScript;
-
   const byProduct = {};
   bundles.forEach(b => { if (!byProduct[b.product]) byProduct[b.product] = []; byProduct[b.product].push(b); });
   const productEntries = Object.entries(byProduct);
   const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
   const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
   const allBenefits = productEntries.flatMap(([, list]) => list.map(b => b.benefitGen).filter(Boolean));
-
   if (hasRko) {
     const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
     const otherProducts = otherEntries.map(([p]) => p);
@@ -337,6 +307,7 @@ function generateResultText(bundleIds) {
 
 function renderIndustries() {
   const select = document.getElementById('industry-select');
+  if (!dataLoaded) return;
   select.innerHTML = '<option value="">Выберите отрасль</option>';
   getUniqueIndustries().forEach(ind => {
     const opt = document.createElement('option');
@@ -357,18 +328,13 @@ function renderProducts() {
     container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Нет продуктов для этой отрасли</p>';
     return;
   }
-
-  // Определяем, у каких продуктов ЕСТЬ бандлы в выбранной отрасли
   const bundlesInIndustry = allBundles.filter(b => b.industry.includes(selectedIndustry));
   const productsWithBundles = new Set(bundlesInIndustry.map(b => b.product));
-
-  // Сортируем: сначала продукты с бандлами, потом без
   const sortedProducts = products.sort((a, b) => {
     const aHas = productsWithBundles.has(a) ? 1 : 0;
     const bHas = productsWithBundles.has(b) ? 1 : 0;
     return bHas - aHas;
   });
-
   sortedProducts.forEach(prodName => {
     const hasBundles = productsWithBundles.has(prodName);
     const pInfo = allProducts.find(p => p.name === prodName);
@@ -376,29 +342,20 @@ function renderProducts() {
     div.className = 'checkbox-item';
     div.style.cursor = hasBundles ? 'pointer' : 'default';
     if (!hasBundles) div.style.opacity = '0.6';
-
-    const nameHtml = pInfo?.link
-      ? `<a href="${pInfo.link}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>`
-      : `<span class="product-name">${prodName}</span>`;
-
+    const nameHtml = pInfo?.link ? `<a href="${pInfo.link}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>` : `<span class="product-name">${prodName}</span>`;
     if (hasBundles) {
       div.innerHTML = `<input type="checkbox" value="${prodName}" ${selectedProducts.includes(prodName) ? 'checked' : ''}> ${nameHtml}`;
       const checkbox = div.querySelector('input');
       checkbox.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          if (!selectedProducts.includes(prodName)) selectedProducts.push(prodName);
-        } else {
+        if (e.target.checked) { if (!selectedProducts.includes(prodName)) selectedProducts.push(prodName); }
+        else {
           selectedProducts = selectedProducts.filter(p => p !== prodName);
-          selectedBundleIds = selectedBundleIds.filter(id => {
-            const b = allBundles.find(x => x.id === id);
-            return b?.product !== prodName;
-          });
+          selectedBundleIds = selectedBundleIds.filter(id => { const b = allBundles.find(x => x.id === id); return b?.product !== prodName; });
         }
-        renderBundles();
-        updateResult();
+        renderBundles(); updateResult();
       });
     } else {
-      div.innerHTML = `<span style="margin-right: 10px; color: #888; font-size: 12px;">—</span> ${nameHtml} <span style="font-size: 11px; color: #999; margin-left: 6px;">(пока нет офферов)</span>`;
+      div.innerHTML = `<span style="margin-right:10px;color:#888;font-size:12px;">—</span> ${nameHtml} <span style="font-size:11px;color:#999;margin-left:6px;">(пока нет офферов)</span>`;
     }
     container.appendChild(div);
   });
@@ -408,26 +365,24 @@ function renderBundles() {
   const grid = document.getElementById('bundles-grid');
   grid.innerHTML = '';
   if (!selectedIndustry) {
-    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">Выберите отрасль, чтобы увидеть доступные бандлы</p>';
+    grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:40px;">Выберите отрасль, чтобы увидеть доступные бандлы</p>';
     return;
   }
   const bundles = getBundles(selectedIndustry, selectedProducts);
   if (bundles.length === 0) {
-    grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">${selectedProducts.length > 0 ? 'Нет бандлов для выбранной комбинации' : 'Для этой отрасли пока нет партнёрских офферов'}</p>`;
+    grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:40px;">${selectedProducts.length>0?'Нет бандлов для выбранной комбинации':'Для этой отрасли пока нет партнёрских офферов'}</p>`;
     return;
   }
   bundles.forEach(b => {
     const isSelected = selectedBundleIds.includes(b.id);
     const card = document.createElement('div');
-    card.className = `bundle-card ${isSelected ? 'selected' : ''}`;
+    card.className = `bundle-card ${isSelected?'selected':''}`;
     const header = document.createElement('div');
     header.className = 'bundle-header';
     header.innerHTML = `<div><div class="bundle-title">${b.product}</div><div class="bundle-vendor">${b.vendor}</div></div>`;
     const benefit = document.createElement('div');
-    benefit.className = 'bundle-benefit';
-    benefit.textContent = b.benefit;
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
+    benefit.className = 'bundle-benefit'; benefit.textContent = b.benefit;
+    const actions = document.createElement('div'); actions.className = 'card-actions';
     if (b.link) {
       const linkBtn = document.createElement('a');
       linkBtn.href = b.link; linkBtn.target = '_blank'; linkBtn.className = 'btn-link'; linkBtn.textContent = 'Открыть оффер ↗';
@@ -445,72 +400,52 @@ function updateResult() {
   const textEl = document.getElementById('result-text');
   const btnEl = document.getElementById('copy-btn');
   const resetBtn = document.getElementById('reset-btn');
-
   const html = generateResultHTML(selectedBundleIds);
   const plain = generateResultText(selectedBundleIds);
-
   if (!html) {
     textEl.innerHTML = 'Выберите бандлы, чтобы получить готовую формулировку';
     textEl.dataset.plainText = '';
-    btnEl.disabled = true;
-    resetBtn.style.display = 'none';
+    btnEl.disabled = true; resetBtn.style.display = 'none';
   } else {
     textEl.innerHTML = html;
-    textEl.dataset.plainText = plain; // Сохраняем чистый текст для копирования
-    btnEl.disabled = false;
-    resetBtn.style.display = 'block';
+    textEl.dataset.plainText = plain;
+    btnEl.disabled = false; resetBtn.style.display = 'block';
   }
 }
 
 function toggleBundle(bundleId) {
-  if (selectedBundleIds.includes(bundleId)) {
-    selectedBundleIds = selectedBundleIds.filter(id => id !== bundleId);
-  } else {
-    selectedBundleIds.push(bundleId);
-  }
-  renderBundles();
-  updateResult();
+  if (selectedBundleIds.includes(bundleId)) selectedBundleIds = selectedBundleIds.filter(id => id !== bundleId);
+  else selectedBundleIds.push(bundleId);
+  renderBundles(); updateResult();
 }
 
 function setupEventListeners() {
   document.getElementById('industry-select').addEventListener('change', (e) => {
-    selectedIndustry = e.target.value;
-    selectedProducts = [];
-    selectedBundleIds = [];
-    const infoEl = document.getElementById('industry-info');
-    const descEl = document.getElementById('industry-desc');
-    if (selectedIndustry && CONFIG.INDUSTRY_DESCS[selectedIndustry]) {
-      descEl.textContent = CONFIG.INDUSTRY_DESCS[selectedIndustry];
-      infoEl.classList.add('active');
-    } else { infoEl.classList.remove('active'); }
+    selectedIndustry = e.target.value; selectedProducts = []; selectedBundleIds = [];
+    const infoEl = document.getElementById('industry-info'), descEl = document.getElementById('industry-desc');
+    if (selectedIndustry && CONFIG.INDUSTRY_DESCS[selectedIndustry]) { descEl.textContent = CONFIG.INDUSTRY_DESCS[selectedIndustry]; infoEl.classList.add('active'); }
+    else infoEl.classList.remove('active');
     renderProducts(); renderBundles(); updateResult();
   });
-
   document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').classList.remove('active'));
   document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('modal-overlay').classList.remove('active'); });
-
   document.getElementById('copy-btn').addEventListener('click', async () => {
     const textEl = document.getElementById('result-text');
-    // Берём чистый текст из data-атрибута, чтобы в буфер не попали HTML-теги
     const text = textEl.dataset.plainText || textEl.textContent;
     try {
       await navigator.clipboard.writeText(text);
-      const btn = document.getElementById('copy-btn');
-      const original = btn.textContent;
-      btn.textContent = '✅ Скопировано!';
-      btn.style.background = 'var(--success-bg)';
+      const btn = document.getElementById('copy-btn'); const original = btn.textContent;
+      btn.textContent = '✅ Скопировано!'; btn.style.background = 'var(--success-bg)';
       setTimeout(() => { btn.textContent = original; btn.style.background = ''; }, 2000);
     } catch (err) { alert('Не удалось скопировать. Выделите текст вручную.'); }
   });
-
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
   document.getElementById('feedback-btn').addEventListener('click', () => alert('Форма обратной связи. Напишите нам!'));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderIndustries();
+  loadCSVData();
   setupEventListeners();
-  console.log("✓ Данные загружены:", allBundles.length, "бандлов,", allProducts.length, "продуктов");
 });
 </script>
 </body>
