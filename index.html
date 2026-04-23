@@ -163,6 +163,25 @@
     .btn-copy:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-reset { background: var(--bg-card); border: none; color: var(--text-secondary); padding: 10px 20px; font-size: 14px; }
     .btn-reset:hover { background: #fff; }
+    .result-text ul {
+  margin: 10px 0 10px 20px;
+  padding: 0;
+  list-style-type: disc;
+}
+.result-text li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.result-text a {
+  color: var(--border-active);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.result-text a:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
 
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(33,33,33,0.6); backdrop-filter: blur(4px);
@@ -543,42 +562,66 @@
     }
 
     function renderProducts() {
-      const container = document.getElementById('products-list');
-      container.innerHTML = '';
-      if (!selectedIndustry) {
-        container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Сначала выберите отрасль</p>';
-        return;
-      }
-      const products = getProductsForIndustry(selectedIndustry);
-      if (products.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Нет продуктов для этой отрасли</p>';
-        return;
-      }
-      products.forEach(prodName => {
-        const pInfo = allProducts.find(p => p.name === prodName);
-        const div = document.createElement('div');
-        div.className = 'checkbox-item';
-        const nameHtml = pInfo?.link 
-          ? `<a href="${pInfo.link}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>`
-          : `<span class="product-name">${prodName}</span>`;
-        div.innerHTML = `<input type="checkbox" value="${prodName}" ${selectedProducts.includes(prodName) ? 'checked' : ''}> ${nameHtml}`;
-        const checkbox = div.querySelector('input');
-        checkbox.addEventListener('change', (e) => {
-          if (e.target.checked) {
-            if (!selectedProducts.includes(prodName)) selectedProducts.push(prodName);
-          } else {
-            selectedProducts = selectedProducts.filter(p => p !== prodName);
-            selectedBundleIds = selectedBundleIds.filter(id => {
-              const b = allBundles.find(x => x.id === id);
-              return b?.product !== prodName;
-            });
-          }
-          renderBundles();
-          updateResult();
-        });
-        container.appendChild(div);
+  const container = document.getElementById('products-list');
+  container.innerHTML = '';
+  if (!selectedIndustry) {
+    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Сначала выберите отрасль</p>';
+    return;
+  }
+  
+  const products = getProductsForIndustry(selectedIndustry);
+  if (products.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">Нет продуктов для этой отрасли</p>';
+    return;
+  }
+
+  // Определяем, у каких продуктов ЕСТЬ бандлы для выбранной отрасли
+  const productsWithBundles = new Set();
+  allBundles.filter(b => b.industry.includes(selectedIndustry)).forEach(b => productsWithBundles.add(b.product));
+
+  // Сортируем: сначала продукты с бандлами, потом без
+  const sortedProducts = products.sort((a, b) => {
+    const aHas = productsWithBundles.has(a) ? 1 : 0;
+    const bHas = productsWithBundles.has(b) ? 1 : 0;
+    return bHas - aHas;
+  });
+
+  sortedProducts.forEach(prodName => {
+    const hasBundles = productsWithBundles.has(prodName);
+    const pInfo = allProducts.find(p => p.name === prodName);
+    const div = document.createElement('div');
+    div.className = 'checkbox-item';
+
+    const nameHtml = pInfo?.link
+      ? `<a href="${pInfo.link}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>`
+      : `<span class="product-name">${prodName}</span>`;
+
+    if (hasBundles) {
+      // ✅ Продукт с бандлами: рисуем активный чекбокс
+      div.innerHTML = `<input type="checkbox" value="${prodName}" ${selectedProducts.includes(prodName) ? 'checked' : ''}> ${nameHtml}`;
+      div.querySelector('input').addEventListener('change', (e) => {
+        if (e.target.checked) {
+          if (!selectedProducts.includes(prodName)) selectedProducts.push(prodName);
+        } else {
+          selectedProducts = selectedProducts.filter(p => p !== prodName);
+          // При снятии галочки удаляем связанные бандлы
+          selectedBundleIds = selectedBundleIds.filter(id => {
+            const b = allBundles.find(x => x.id === id);
+            return b?.product !== prodName;
+          });
+        }
+        renderBundles();
+        updateResult();
       });
+    } else {
+      // ❌ Продукт без бандлов: убираем чекбокс, делаем полупрозрачным
+      div.style.opacity = '0.5';
+      div.style.cursor = 'default';
+      div.innerHTML = `<span style="margin-right: 10px; color: #888;">—</span> ${nameHtml} <span style="font-size: 12px; color: #999; margin-left: 6px;">(пока нет офферов)</span>`;
     }
+    container.appendChild(div);
+  });
+}
 
     function renderBundles() {
       const grid = document.getElementById('bundles-grid');
@@ -637,21 +680,43 @@
     }
 
     function updateResult() {
-      const textEl = document.getElementById('result-text');
-      const btnEl = document.getElementById('copy-btn');
-      const resetBtn = document.getElementById('reset-btn');
-      const text = generateCombinedText(selectedBundleIds);
-      
-      if (!text) {
-        textEl.textContent = 'Выберите бандлы, чтобы получить готовую формулировку';
-        btnEl.disabled = true;
-        resetBtn.style.display = 'none';
-      } else {
-        textEl.textContent = text;
-        btnEl.disabled = false;
-        resetBtn.style.display = 'block';
-      }
-    }
+  const textEl = document.getElementById('result-text');
+  const btnEl = document.getElementById('copy-btn');
+  const resetBtn = document.getElementById('reset-btn');
+
+  if (selectedBundleIds.length === 0) {
+    textEl.innerHTML = 'Выберите бандлы, чтобы получить готовую формулировку';
+    btnEl.disabled = true;
+    resetBtn.style.display = 'none';
+    return;
+  }
+
+  const bundles = selectedBundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
+  let htmlContent = '';
+  let plainTextContent = ''; // Для буфера обмена
+
+  if (bundles.length === 1) {
+    htmlContent = bundles[0].fullScript;
+    plainTextContent = bundles[0].fullScript;
+  } else {
+    // 📝 Если офферов 2+, формируем маркированный список
+    htmlContent = '<ul>';
+    plainTextContent = '';
+    bundles.forEach(b => {
+      // 🌐 Гиперссылка в названии вендора
+      htmlContent += `<li><a href="${b.link}" target="_blank">${b.vendor}</a>: ${b.benefit}</li>`;
+      plainTextContent += `• ${b.vendor}: ${b.benefit}\n`;
+    });
+    htmlContent += '</ul>';
+  }
+
+  textEl.innerHTML = htmlContent;
+  // Сохраняем чистый текст для копирования (без HTML-тегов)
+  textEl.dataset.plainText = plainTextContent || htmlContent;
+  
+  btnEl.disabled = false;
+  resetBtn.style.display = 'block';
+}
 
     function toggleBundle(bundleId) {
       if (selectedBundleIds.includes(bundleId)) {
@@ -678,22 +743,24 @@
     }
 
     function setupEventListeners() {
-      document.getElementById('industry-select').addEventListener('change', (e) => {
-        selectedIndustry = e.target.value;
-        selectedProducts = [];
-        selectedBundleIds = [];
-        const infoEl = document.getElementById('industry-info');
-        const descEl = document.getElementById('industry-desc');
-        if (selectedIndustry && CONFIG.INDUSTRY_DESCS[selectedIndustry]) {
-          descEl.textContent = CONFIG.INDUSTRY_DESCS[selectedIndustry];
-          infoEl.classList.add('active');
-        } else {
-          infoEl.classList.remove('active');
-        }
-        renderProducts();
-        renderBundles();
-        updateResult();
-      });
+      document.getElementById('copy-btn').addEventListener('click', async () => {
+  const textEl = document.getElementById('result-text');
+  // Берём чистый текст из data-атрибута, чтобы в буфер не попали HTML-теги
+  const text = textEl.dataset.plainText || textEl.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copy-btn');
+    const original = btn.textContent;
+    btn.textContent = '✅ Скопировано!';
+    btn.style.background = 'var(--success-bg)';
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.style.background = '';
+    }, 2000);
+  } catch (err) {
+    alert('Не удалось скопировать. Выделите текст вручную.');
+  }
+});
       
       document.getElementById('modal-close').addEventListener('click', () => {
         document.getElementById('modal-overlay').classList.remove('active');
