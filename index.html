@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Матрица бандлов | Подбор офферов</title>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=108748062', 'ym');
+
+    ym(108748062, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/108748062" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 <style>
 :root {
 --bg-page: #f1eee8;
@@ -33,20 +46,6 @@ background: var(--bg-page); color: var(--text-primary); line-height: 1.5; paddin
 header { margin-bottom: 24px; }
 h1 { font-size: 28px; color: var(--text-dark); margin-bottom: 4px; }
 .subtitle { color: var(--text-secondary); font-size: 15px; }
-
-/* 🔹 Плашка про VPN */
-.vpn-notice {
-  background: rgba(255, 221, 45, 0.15);
-  border-left: 4px solid var(--accent);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-top: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-dark);
-  line-height: 1.4;
-}
-
 .industry-info {
 background: var(--bg-card); border: none; border-radius: var(--radius); padding: 16px; margin-bottom: 24px; display: none;
 }
@@ -142,7 +141,6 @@ border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px;
 <header>
 <h1>📋 Матрица бандлов</h1>
 <p class="subtitle">Подбор продуктов и партнёрских офферов</p>
-<div class="vpn-notice">⚠️ Сайт необходимо открывать без VPN / VDI</div>
 </header>
 <div class="industry-info" id="industry-info">
 <h3>ℹ️ Об отрасли</h3>
@@ -388,7 +386,6 @@ const b = bundles[0];
 const benefitText = applyGrammar(b.benefit, false);
 let script = b.fullScript.replace(b.benefit, benefitText);
 const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-// ✅ ИСПРАВЛЕНО: используем link_vendor вместо несуществующего b.link
 return script.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
 }
 // ВАРИАНТ: 2+ ОФФЕРА (Список)
@@ -413,7 +410,6 @@ intro = `${firstAction} ${joinWithAnd(allProductsList)}`;
 let html = `${intro} и получи:<ul>`;
 bundles.forEach(b => {
 const benefitText = applyGrammar(b.benefit, true);
-// ✅ ИСПРАВЛЕНО: link_vendor
 html += `<li>${benefitText} от <a href="${b.link_vendor}" target="_blank">${b.vendor}</a></li>`;
 });
 html += `</ul>`;
@@ -593,11 +589,11 @@ renderProducts(); renderBundles(); updateResult();
 document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').classList.remove('active'));
 document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('modal-overlay').classList.remove('active'); });
 
-// ✅ ИСПРАВЛЕНО: Копирование с сохранением гиперссылок и форматирования
+// ✅ Копирование с сохранением гиперссылок и форматирования (Rich Text + Plain Text)
 document.getElementById('copy-btn').addEventListener('click', async () => {
   const textEl = document.getElementById('result-text');
-  const htmlContent = textEl.innerHTML;      // HTML с тегами <a>, <ul>, <li>
-  const plainContent = textEl.dataset.plainText || textEl.textContent; // Чистый текст
+  const htmlContent = textEl.innerHTML;
+  const plainContent = textEl.dataset.plainText || textEl.textContent;
 
   const showSuccess = (msg) => {
     const btn = document.getElementById('copy-btn');
@@ -608,7 +604,6 @@ document.getElementById('copy-btn').addEventListener('click', async () => {
   };
 
   try {
-    // Пробуем записать оба формата в буфер
     await navigator.clipboard.write([
       new ClipboardItem({
         'text/html': new Blob([htmlContent], { type: 'text/html' }),
@@ -617,7 +612,6 @@ document.getElementById('copy-btn').addEventListener('click', async () => {
     ]);
     showSuccess('✅ Скопировано!');
   } catch (err) {
-    // Fallback для браузеров без поддержки ClipboardItem (например, старые версии Firefox)
     try {
       await navigator.clipboard.writeText(plainContent);
       showSuccess('✅ Скопировано (текст)!');
