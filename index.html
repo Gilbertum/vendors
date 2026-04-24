@@ -366,29 +366,19 @@ function normalizeBenefit(text) {
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
-// ✨ Генерация HTML для отображения
+// ✨ Генерация HTML для отображения (с гиперссылками)
 function generateResultHTML(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
-  const isSingle = bundles.length === 1; // Проверяем, выбран ли всего 1 оффер
-
-  // === ВАРИАНТ: 1 ОФФЕР ===
-  if (isSingle) {
+  // === 1 ОФФЕР ===
+  if (bundles.length === 1) {
     const b = bundles[0];
-    // Применяем склонение + НИЖНИЙ регистр
-    const formattedBenefit = applyGrammar(b.benefit, true); 
-    
-    // Формируем скрипт: заменяем старую выгоду на новую (склоненную и строчную)
-    // Также заменяем название вендора на ссылку
-    let script = b.fullScript.replace(b.benefit, formattedBenefit);
-    
-    // Вставляем ссылку на вендора
     const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return script.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
+    return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
   }
 
-  // === ВАРИАНТ: 2+ ОФФЕРА (Список) ===
+  // === 2+ ОФФЕРА (список) ===
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -401,7 +391,8 @@ function generateResultHTML(bundleIds) {
 
   let intro = '';
   if (hasRko) {
-    const otherProducts = productEntries.filter(([p]) => p !== "Расчетный счет").map(([p]) => p);
+    const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
+    const otherProducts = otherEntries.map(([p]) => p);
     intro = `Открой Расчетный счет`;
     if (otherProducts.length > 0) intro += ` и подключи ${joinWithAnd(otherProducts)}`;
   } else {
@@ -412,10 +403,8 @@ function generateResultHTML(bundleIds) {
 
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
-    // Для списка: Склоняем, но оставляем ЗАГЛАВНУЮ букву (false)
-    const formattedBenefit = applyGrammar(b.benefit, false); 
-    
-    html += `<li><a href="${b.link_vendor}" target="_blank">${b.vendor}</a>: ${formattedBenefit}</li>`;
+    // ✅ ИЗМЕНЕНИЕ: выгода ПЕРЕД "от", вендор ПОСЛЕ с гиперссылкой
+    html += `<li>${b.benefitGen || b.benefit} от <a href="${b.link_vendor}" target="_blank">${b.vendor}</a></li>`;
   });
   html += `</ul>`;
   return html;
@@ -426,17 +415,12 @@ function generateResultText(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
-  const isSingle = bundles.length === 1;
-
-  // === ВАРИАНТ: 1 ОФФЕР ===
-  if (isSingle) {
-    const b = bundles[0];
-    // Применяем склонение + НИЖНИЙ регистр
-    const formattedBenefit = applyGrammar(b.benefit, true); 
-    return b.fullScript.replace(b.benefit, formattedBenefit);
+  // === 1 ОФФЕР ===
+  if (bundles.length === 1) {
+    return bundles[0].fullScript;
   }
 
-  // === ВАРИАНТ: 2+ ОФФЕРА ===
+  // === 2+ ОФФЕРА ===
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -447,13 +431,14 @@ function generateResultText(bundleIds) {
   const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
   const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
   
-  // Собираем все выгоды
+  // ✅ ИЗМЕНЕНИЕ: собираем выгоды в формате "выгода от Вендор"
   const allBenefits = productEntries.flatMap(([, list]) => 
-    list.map(b => applyGrammar(b.benefit, false)) // Склоняем, но ЗАГЛАВНАЯ
+    list.map(b => `${b.benefitGen || b.benefit} от ${b.vendor}`).filter(Boolean)
   );
 
   if (hasRko) {
-    const otherProducts = productEntries.filter(([p]) => p !== "Расчетный счет").map(([p]) => p);
+    const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
+    const otherProducts = otherEntries.map(([p]) => p);
     let result = `Открой Расчетный счет`;
     if (otherProducts.length > 0) result += ` и подключи ${joinWithAnd(otherProducts)}`;
     if (allBenefits.length > 0) result += ` и получи ${joinWithAnd(allBenefits)}`;
