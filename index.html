@@ -359,6 +359,34 @@ function getBundles(industry, products) {
     return indMatch && prodMatch;
   });
 }
+  /**
+ * Функция для склонения и управления регистром
+ * @param {string} text - Исходный текст (например, "Скидка 15%")
+ * @param {boolean} isListMode - true если это список (оставляем Заглавную), false если 1 строка (строчная)
+ */
+function applyGrammar(text, isListMode) {
+  if (!text) return "";
+  
+  let processed = text;
+  
+  // 1. Склонение (меняем "Скидка" на "скидку")
+  if (text.startsWith("Скидка ")) {
+    processed = "скидку " + text.slice(7);
+  } else if (text.startsWith("Бонус ")) {
+    processed = "бонусы " + text.slice(6);
+  } else if (text.startsWith("Кэшбэк ")) {
+    processed = "кэшбэк " + text.slice(7);
+  }
+  
+  // 2. Управление регистром
+  if (!isListMode) {
+    // Если это одиночная строка — первая буква должна быть маленькой
+    return processed.charAt(0).toLowerCase() + processed.slice(1);
+  } else {
+    // Если это список — первая буква Заглавная (Скидку...)
+    return processed.charAt(0).toUpperCase() + processed.slice(1);
+  }
+}
 
 // ✅ Вспомогательная функция: приводим первую букву к нижнему регистру
 function normalizeBenefit(text) {
@@ -366,19 +394,24 @@ function normalizeBenefit(text) {
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
-// ✨ Генерация HTML для отображения (с гиперссылками)
+// ✨ Для экрана (с гиперссылками)
 function generateResultHTML(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
-  // === 1 ОФФЕР ===
+  // ВАРИАНТ: 1 ОФФЕР
   if (bundles.length === 1) {
     const b = bundles[0];
+    // Применяем падеж + нижний регистр
+    const benefitText = applyGrammar(b.benefit, false); 
+    
+    // Собираем скрипт и вставляем ссылку на вендора
+    let script = b.fullScript.replace(b.benefit, benefitText);
     const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
+    return script.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link}" target="_blank">${b.vendor}</a>`);
   }
 
-  // === 2+ ОФФЕРА (список) ===
+  // ВАРИАНТ: 2+ ОФФЕРА (Список)
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -391,8 +424,7 @@ function generateResultHTML(bundleIds) {
 
   let intro = '';
   if (hasRko) {
-    const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
-    const otherProducts = otherEntries.map(([p]) => p);
+    const otherProducts = productEntries.filter(([p]) => p !== "Расчетный счет").map(([p]) => p);
     intro = `Открой Расчетный счет`;
     if (otherProducts.length > 0) intro += ` и подключи ${joinWithAnd(otherProducts)}`;
   } else {
@@ -401,13 +433,54 @@ function generateResultHTML(bundleIds) {
     intro = `${firstAction} ${joinWithAnd(allProductsList)}`;
   }
 
+  // ✅ Генерируем список, где ВЕНДОР в конце
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
-    // ✅ ИЗМЕНЕНИЕ: выгода ПЕРЕД "от", вендор ПОСЛЕ с гиперссылкой
-    html += `<li>${b.benefitGen || b.benefit} от <a href="${b.link_vendor}" target="_blank">${b.vendor}</a></li>`;
+    // Для списка: падеж меняем, но регистр Заглавный (true)
+    const benefitText = applyGrammar(b.benefit, true);
+    html += `<li>${benefitText} от <a href="${b.link}" target="_blank">${b.vendor}</a></li>`;
   });
   html += `</ul>`;
   return html;
+}
+
+// 📝 Для буфера обмена (чистый текст)
+function generateResultText(bundleIds) {
+  const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
+  if (bundles.length === 0) return '';
+  
+  if (bundles.length === 1) {
+    const b = bundles[0];
+    const benefitText = applyGrammar(b.benefit, false);
+    return b.fullScript.replace(b.benefit, benefitText);
+  }
+
+  const byProduct = {};
+  bundles.forEach(b => { 
+    if (!byProduct[b.product]) byProduct[b.product] = []; 
+    byProduct[b.product].push(b); 
+  });
+  
+  const productEntries = Object.entries(byProduct);
+  const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
+  const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
+
+  // ✅ Собираем фразы "Выгода от Вендор"
+  const allBenefits = productEntries.flatMap(([, list]) => 
+    list.map(b => `${applyGrammar(b.benefit, true)} от ${b.vendor}`).filter(Boolean)
+  );
+
+  if (hasRko) {
+    const otherProducts = productEntries.filter(([p]) => p !== "Расчетный счет").map(([p]) => p);
+    let result = `Открой Расчетный счет`;
+    if (otherProducts.length > 0) result += ` и подключи ${joinWithAnd(otherProducts)}`;
+    if (allBenefits.length > 0) result += ` и получи ${joinWithAnd(allBenefits)}`;
+    return result;
+  }
+  
+  const allProductsList = productEntries.map(([p]) => p);
+  const firstAction = productEntries[0][1][0].fullScript.includes('Открой') ? 'Открой' : 'Подключи';
+  return `${firstAction} ${joinWithAnd(allProductsList)} и получи ${joinWithAnd(allBenefits)}`;
 }
 
 // 📝 Генерация чистого текста для копирования
@@ -581,13 +654,13 @@ function updateResult() {
   const plain = generateResultText(selectedBundleIds);
 
   if (!html) {
-    textEl.innerHTML = 'Выберите бандлы, чтобы получить готовую формулировку';
+    textEl.textContent = 'Выберите бандлы, чтобы получить готовую формулировку';
     textEl.dataset.plainText = '';
     btnEl.disabled = true;
     resetBtn.style.display = 'none';
   } else {
-    textEl.innerHTML = html;
-    textEl.dataset.plainText = plain;
+    textEl.innerHTML = html;      // ← Показываем HTML (со ссылками)
+    textEl.dataset.plainText = plain; // ← Сохраняем чистый текст для копирования
     btnEl.disabled = false;
     resetBtn.style.display = 'block';
   }
@@ -623,42 +696,62 @@ function setupEventListeners() {
   document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('modal-overlay').classList.remove('active'); });
 
   // ✅ Копирование с сохранением гиперссылок (Rich Text + Plain Text)
-  document.getElementById('copy-btn').addEventListener('click', async () => {
-    const textEl = document.getElementById('result-text');
-    const htmlContent = textEl.innerHTML;  // с <a> тегами
-    const plainContent = textEl.dataset.plainText || textEl.textContent; // без тегов
+  // document.getElementById('copy-btn').addEventListener('click', async () => {
+  //   const textEl = document.getElementById('result-text');
+  //   const htmlContent = textEl.innerHTML;  // с <a> тегами
+  //   const plainContent = textEl.dataset.plainText || textEl.textContent; // без тегов
 
-    try {
-      // Создаём blobs для разных форматов
-      const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-      const textBlob = new Blob([plainContent], { type: 'text/plain' });
+  //   try {
+  //     // Создаём blobs для разных форматов
+  //     const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+  //     const textBlob = new Blob([plainContent], { type: 'text/plain' });
       
-      // Записываем в буфер оба формата
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html': htmlBlob,
-          'text/plain': textBlob
-        })
-      ]);
+  //     // Записываем в буфер оба формата
+  //     await navigator.clipboard.write([
+  //       new ClipboardItem({
+  //         'text/html': htmlBlob,
+  //         'text/plain': textBlob
+  //       })
+  //     ]);
       
-      const btn = document.getElementById('copy-btn');
-      const original = btn.textContent;
-      btn.textContent = '✅ Скопировано!';
-      btn.style.background = 'var(--success-bg)';
-      setTimeout(() => { btn.textContent = original; btn.style.background = ''; }, 2000);
-    } catch (err) {
-      // Fallback для старых браузеров
-      try {
-        await navigator.clipboard.writeText(plainContent);
-        const btn = document.getElementById('copy-btn');
-        btn.textContent = '✅ Скопировано (текст)!';
-        setTimeout(() => { btn.textContent = 'Скопировать'; }, 2000);
-      } catch {
-        alert('Не удалось скопировать. Выделите текст вручную.');
-      }
-    }
-  });
+  //     const btn = document.getElementById('copy-btn');
+  //     const original = btn.textContent;
+  //     btn.textContent = '✅ Скопировано!';
+  //     btn.style.background = 'var(--success-bg)';
+  //     setTimeout(() => { btn.textContent = original; btn.style.background = ''; }, 2000);
+  //   } catch (err) {
+  //     // Fallback для старых браузеров
+  //     try {
+  //       await navigator.clipboard.writeText(plainContent);
+  //       const btn = document.getElementById('copy-btn');
+  //       btn.textContent = '✅ Скопировано (текст)!';
+  //       setTimeout(() => { btn.textContent = 'Скопировать'; }, 2000);
+  //     } catch {
+  //       alert('Не удалось скопировать. Выделите текст вручную.');
+  //     }
+  //   }
+  // });
 
+document.getElementById('copy-btn').addEventListener('click', async () => {
+  const textEl = document.getElementById('result-text');
+  // Берем чистый текст из data-атрибута
+  const textToCopy = textEl.dataset.plainText || textEl.textContent; 
+  
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    const btn = document.getElementById('copy-btn');
+    const original = btn.textContent;
+    btn.textContent = '✅ Скопировано!';
+    btn.style.background = 'var(--success-bg)';
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.style.background = '';
+    }, 2000);
+  } catch (err) {
+    alert('Не удалось скопировать. Выделите текст вручную.');
+  }
+});
+  
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
   
   // 🔗 Обработчик кнопки фидбека — открываем опрос 
