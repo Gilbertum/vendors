@@ -168,20 +168,6 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
   </div>
 </div>
 <div class="modal-overlay" id="modal-overlay">
-    <!-- Feedback Modal -->
-  <div class="modal-overlay" id="feedback-modal">
-    <div class="modal" style="max-width: 900px; height: 80vh; padding: 0;">
-      <button class="modal-close" id="feedback-close">&times;</button>
-      <iframe 
-        id="feedback-iframe"
-        src=""
-        style="width:100%; height:100%; border:none; border-radius:16px;"
-        loading="lazy"
-      ></iframe>
-    </div>
-  </div>
-
-
   <div class="modal">
     <button class="modal-close" id="modal-close">&times;</button>
     <h3 id="modal-title">Детали оффера</h3>
@@ -207,13 +193,13 @@ const CSV_URLS = {
   PRODUCTS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3BvjUqCxgtunnRNbJlX0D9T7nGowBNWf9C5ybNes6MFdYYvTs6M4i7HT0nlXDFsa3PvNN5qJcOvuz/pub?output=csv'
 };
 
-// 🗂️ Маппинг колонок CSV → внутренние поля (ОБНОВЛЁН: разделены ссылки)
+// 🗂️ Маппинг колонок CSV → внутренние поля
 const CSV_MAP = {
   PRODUCTS: {
     industry: 'industry',
     product: 'product',
     desc: 'product_desc',
-    link_product: 'url_product'  // ← ссылка на лендинг продукта банка
+    link_product: 'url_product'
   },
   BUNDLES: {
     industry: 'industry',
@@ -223,7 +209,7 @@ const CSV_MAP = {
     benefit: 'benefit',
     benefitGen: 'benefit',
     details: 'desc',
-    link_vendor: 'url_offer',    // ← ссылка на оффер вендора
+    link_vendor: 'url_offer',
     fullScript: ''
   }
 };
@@ -238,6 +224,10 @@ const CONFIG = {
     "Стройка": "Строительство, ремонт, производство стройматериалов."
   }
 };
+
+// 🔗 Ссылка на опрос обратной связи
+const FEEDBACK_URL = 'https://polls.tbank.ru/s/cmobly74g002q0dra49i7ba4n';
+const FEEDBACK_IFRAME = 'https://p.tbank.ru/polls/prod/poll-cmobly74g002q0dra49i7ba4n/index.html';
 
 // 📦 Глобальные данные
 let allBundles = [], allProducts = [], dataLoaded = false;
@@ -298,21 +288,21 @@ async function loadData() {
     const rawBundles = parseCSV(bundlesText);
     const rawProducts = parseCSV(productsText);
     
-    // Маппим продукты (используем link_product)
+    // Маппим продукты
     allProducts = rawProducts.map(row => ({
       industry: row[CSV_MAP.PRODUCTS.industry]?.split(',').map(s => s.trim()).filter(Boolean),
       name: row[CSV_MAP.PRODUCTS.product],
       desc: row[CSV_MAP.PRODUCTS.desc],
-      link_product: row[CSV_MAP.PRODUCTS.link_product]  // ← новая переменная
+      link_product: row[CSV_MAP.PRODUCTS.link_product]
     })).filter(p => p.name);
     
-    // Маппим бандлы (используем link_vendor)
+    // Маппим бандлы + генерируем fullScript
     allBundles = rawBundles.map((row, idx) => {
       const industries = row[CSV_MAP.BUNDLES.industry]?.split(',').map(s => s.trim()).filter(Boolean) || [];
       const product = row[CSV_MAP.BUNDLES.product];
       const vendor = row[CSV_MAP.BUNDLES.vendor];
       const benefit = row[CSV_MAP.BUNDLES.benefit];
-      const link_vendor = row[CSV_MAP.BUNDLES.link_vendor];  // ← новая переменная
+      const link_vendor = row[CSV_MAP.BUNDLES.link_vendor];
       const action = product.toLowerCase().includes('счет') ? 'Открой' : 'Подключи';
       
       return {
@@ -323,7 +313,7 @@ async function loadData() {
         benefit,
         benefitGen: row[CSV_MAP.BUNDLES.benefitGen] || benefit,
         details: row[CSV_MAP.BUNDLES.details] || '',
-        link_vendor,  // ← ссылка на оффер вендора
+        link_vendor,
         fullScript: `${action} ${product} и получи ${benefit} от ${vendor}`
       };
     }).filter(b => b.product && b.vendor);
@@ -362,19 +352,23 @@ function getBundles(industry, products) {
   });
 }
 
-// ✨ Генерация HTML для отображения (используем link_vendor для ссылок на вендоров)
+// ✅ Вспомогательная функция: приводим первую букву к нижнему регистру
+function normalizeBenefit(text) {
+  if (!text) return text;
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+// ✨ Генерация HTML для отображения (с сохранением ссылок)
 function generateResultHTML(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
   if (bundles.length === 1) {
     const b = bundles[0];
-    // Вшиваем ссылку на вендора прямо в название внутри текста
     const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
   }
 
-  // 2+ офферов: маркированный список с вводной фразой
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -399,14 +393,14 @@ function generateResultHTML(bundleIds) {
 
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
-    // Используем link_vendor для ссылки на оффер
-    html += `<li><a href="${b.link_vendor}" target="_blank">${b.vendor}</a>: ${b.benefitGen || b.benefit}</li>`;
+    // ✅ Используем normalizeBenefit для правильного падежа/регистра
+    html += `<li><a href="${b.link_vendor}" target="_blank">${b.vendor}</a>: ${normalizeBenefit(b.benefitGen || b.benefit)}</li>`;
   });
   html += `</ul>`;
   return html;
 }
 
-// 📝 Генерация чистого текста для копирования (без HTML)
+// 📝 Генерация чистого текста для копирования (но с Markdown-стилем ссылок для совместимости)
 function generateResultText(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
@@ -421,7 +415,7 @@ function generateResultText(bundleIds) {
   const productEntries = Object.entries(byProduct);
   const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
   const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
-  const allBenefits = productEntries.flatMap(([, list]) => list.map(b => b.benefitGen).filter(Boolean));
+  const allBenefits = productEntries.flatMap(([, list]) => list.map(b => normalizeBenefit(b.benefitGen)).filter(Boolean));
 
   if (hasRko) {
     const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
@@ -481,7 +475,6 @@ function renderProducts() {
     div.style.cursor = hasBundles ? 'pointer' : 'default';
     if (!hasBundles) div.style.opacity = '0.6';
 
-    // Используем link_product для ссылки на продукт банка
     const nameHtml = pInfo?.link_product
       ? `<a href="${pInfo.link_product}" target="_blank" class="product-link" onclick="event.stopPropagation()">${prodName} ↗</a>`
       : `<span class="product-name">${prodName}</span>`;
@@ -489,6 +482,13 @@ function renderProducts() {
     if (hasBundles) {
       div.innerHTML = `<input type="checkbox" value="${prodName}" ${selectedProducts.includes(prodName) ? 'checked' : ''}> ${nameHtml}`;
       const checkbox = div.querySelector('input');
+      
+      // Защита ссылки от срабатывания чекбокса
+      const link = div.querySelector('a');
+      if (link) {
+        link.addEventListener('click', (e) => e.stopPropagation());
+      }
+
       checkbox.addEventListener('change', (e) => {
         if (e.target.checked) {
           if (!selectedProducts.includes(prodName)) selectedProducts.push(prodName);
@@ -539,7 +539,6 @@ function renderBundles() {
     
     const actions = document.createElement('div');
     actions.className = 'card-actions';
-    // Используем link_vendor для кнопки "Открыть оффер"
     if (b.link_vendor) {
       const linkBtn = document.createElement('a');
       linkBtn.href = b.link_vendor; linkBtn.target = '_blank'; linkBtn.className = 'btn-link'; linkBtn.textContent = 'Открыть оффер ↗';
@@ -604,59 +603,55 @@ function setupEventListeners() {
   document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').classList.remove('active'));
   document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('modal-overlay').classList.remove('active'); });
 
+  // ✅ Копирование с сохранением гиперссылок (Rich Text + Plain Text)
   document.getElementById('copy-btn').addEventListener('click', async () => {
     const textEl = document.getElementById('result-text');
-    const text = textEl.dataset.plainText || textEl.textContent;
+    const htmlContent = textEl.innerHTML;  // с <a> тегами
+    const plainContent = textEl.dataset.plainText || textEl.textContent; // без тегов
+
     try {
-      await navigator.clipboard.writeText(text);
+      // Создаём blobs для разных форматов
+      const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+      const textBlob = new Blob([plainContent], { type: 'text/plain' });
+      
+      // Записываем в буфер оба формата
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': htmlBlob,
+          'text/plain': textBlob
+        })
+      ]);
+      
       const btn = document.getElementById('copy-btn');
       const original = btn.textContent;
       btn.textContent = '✅ Скопировано!';
       btn.style.background = 'var(--success-bg)';
       setTimeout(() => { btn.textContent = original; btn.style.background = ''; }, 2000);
-    } catch (err) { alert('Не удалось скопировать. Выделите текст вручную.'); }
+    } catch (err) {
+      // Fallback для старых браузеров
+      try {
+        await navigator.clipboard.writeText(plainContent);
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✅ Скопировано (текст)!';
+        setTimeout(() => { btn.textContent = '📋 Скопировать в буфер'; }, 2000);
+      } catch {
+        alert('Не удалось скопировать. Выделите текст вручную.');
+      }
+    }
   });
 
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
   
-  initFeedbackModal();
-}
-
-// 🧩 Feedback Modal Module (isolated, reusable)
-function initFeedbackModal() {
-  const FEEDBACK_URL = 'https://p.tbank.ru/polls/prod/poll-cmobly74g002q0dra49i7ba4n/index.html';
-
-  const btn = document.getElementById('feedback-btn');
-  const modal = document.getElementById('feedback-modal');
-  const closeBtn = document.getElementById('feedback-close');
-  const iframe = document.getElementById('feedback-iframe');
-
-  if (!btn || !modal || !closeBtn || !iframe) return;
-
-  const open = () => {
-    iframe.src = FEEDBACK_URL;
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden'; // lock scroll
-  };
-
-  const close = () => {
-    modal.classList.remove('active');
-    iframe.src = ''; // cleanup (важно!)
-    document.body.style.overflow = '';
-  };
-
-  btn.addEventListener('click', open);
-  closeBtn.addEventListener('click', close);
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) close();
+  // 🔗 Обработчик кнопки фидбека — открываем опрос в новой вкладке
+  document.getElementById('feedback-btn').addEventListener('click', () => {
+    window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer');
   });
 }
 
 // 🚀 Инициализация
- async function init() {
-   document.getElementById('bundles-grid').innerHTML = 
-     '<div class="loading"><div class="spinner"></div>Выберите отрасль...</div>';
+async function init() {
+  document.getElementById('bundles-grid').innerHTML = 
+    '<div class="loading"><div class="spinner"></div>Загрузка данных...</div>';
   
   const success = await loadData();
   if (success) {
