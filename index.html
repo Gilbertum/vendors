@@ -237,10 +237,6 @@ const CONFIG = {
   }
 };
 
-// 🔗 Ссылка на опрос обратной связи
-const FEEDBACK_URL = 'https://polls.tbank.ru/s/cmobly74g002q0dra49i7ba4n';
-const FEEDBACK_IFRAME = 'https://p.tbank.ru/polls/prod/poll-cmobly74g002q0dra49i7ba4n/index.html';
-
 // 📦 Глобальные данные
 let allBundles = [], allProducts = [], dataLoaded = false;
 let selectedIndustry = "", selectedProducts = [], selectedBundleIds = [];
@@ -370,17 +366,29 @@ function normalizeBenefit(text) {
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
-// ✨ Генерация HTML для отображения (с сохранением ссылок)
+// ✨ Генерация HTML для отображения
 function generateResultHTML(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
   
-  if (bundles.length === 1) {
+  const isSingle = bundles.length === 1; // Проверяем, выбран ли всего 1 оффер
+
+  // === ВАРИАНТ: 1 ОФФЕР ===
+  if (isSingle) {
     const b = bundles[0];
+    // Применяем склонение + НИЖНИЙ регистр
+    const formattedBenefit = applyGrammar(b.benefit, true); 
+    
+    // Формируем скрипт: заменяем старую выгоду на новую (склоненную и строчную)
+    // Также заменяем название вендора на ссылку
+    let script = b.fullScript.replace(b.benefit, formattedBenefit);
+    
+    // Вставляем ссылку на вендора
     const escapedVendor = b.vendor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return b.fullScript.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
+    return script.replace(new RegExp(escapedVendor, 'g'), `<a href="${b.link_vendor}" target="_blank">${b.vendor}</a>`);
   }
 
+  // === ВАРИАНТ: 2+ ОФФЕРА (Список) ===
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -393,8 +401,7 @@ function generateResultHTML(bundleIds) {
 
   let intro = '';
   if (hasRko) {
-    const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
-    const otherProducts = otherEntries.map(([p]) => p);
+    const otherProducts = productEntries.filter(([p]) => p !== "Расчетный счет").map(([p]) => p);
     intro = `Открой Расчетный счет`;
     if (otherProducts.length > 0) intro += ` и подключи ${joinWithAnd(otherProducts)}`;
   } else {
@@ -405,19 +412,31 @@ function generateResultHTML(bundleIds) {
 
   let html = `${intro} и получи:<ul>`;
   bundles.forEach(b => {
-    // ✅ Используем normalizeBenefit для правильного падежа/регистра
-    html += `<li><a href="${b.link_vendor}" target="_blank">${b.vendor}</a>: ${normalizeBenefit(b.benefitGen || b.benefit)}</li>`;
+    // Для списка: Склоняем, но оставляем ЗАГЛАВНУЮ букву (false)
+    const formattedBenefit = applyGrammar(b.benefit, false); 
+    
+    html += `<li><a href="${b.link_vendor}" target="_blank">${b.vendor}</a>: ${formattedBenefit}</li>`;
   });
   html += `</ul>`;
   return html;
 }
 
-// 📝 Генерация чистого текста для копирования (но с Markdown-стилем ссылок для совместимости)
+// 📝 Генерация чистого текста для копирования
 function generateResultText(bundleIds) {
   const bundles = bundleIds.map(id => allBundles.find(b => b.id === id)).filter(Boolean);
   if (bundles.length === 0) return '';
-  if (bundles.length === 1) return bundles[0].fullScript;
+  
+  const isSingle = bundles.length === 1;
 
+  // === ВАРИАНТ: 1 ОФФЕР ===
+  if (isSingle) {
+    const b = bundles[0];
+    // Применяем склонение + НИЖНИЙ регистр
+    const formattedBenefit = applyGrammar(b.benefit, true); 
+    return b.fullScript.replace(b.benefit, formattedBenefit);
+  }
+
+  // === ВАРИАНТ: 2+ ОФФЕРА ===
   const byProduct = {};
   bundles.forEach(b => { 
     if (!byProduct[b.product]) byProduct[b.product] = []; 
@@ -427,11 +446,14 @@ function generateResultText(bundleIds) {
   const productEntries = Object.entries(byProduct);
   const hasRko = productEntries.some(([p]) => p === "Расчетный счет");
   const joinWithAnd = (arr) => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' и ' + arr[arr.length - 1] : arr[0];
-  const allBenefits = productEntries.flatMap(([, list]) => list.map(b => normalizeBenefit(b.benefitGen)).filter(Boolean));
+  
+  // Собираем все выгоды
+  const allBenefits = productEntries.flatMap(([, list]) => 
+    list.map(b => applyGrammar(b.benefit, false)) // Склоняем, но ЗАГЛАВНАЯ
+  );
 
   if (hasRko) {
-    const otherEntries = productEntries.filter(([p]) => p !== "Расчетный счет");
-    const otherProducts = otherEntries.map(([p]) => p);
+    const otherProducts = productEntries.filter(([p]) => p !== "Расчетный счет").map(([p]) => p);
     let result = `Открой Расчетный счет`;
     if (otherProducts.length > 0) result += ` и подключи ${joinWithAnd(otherProducts)}`;
     if (allBenefits.length > 0) result += ` и получи ${joinWithAnd(allBenefits)}`;
@@ -645,7 +667,7 @@ function setupEventListeners() {
         await navigator.clipboard.writeText(plainContent);
         const btn = document.getElementById('copy-btn');
         btn.textContent = '✅ Скопировано (текст)!';
-        setTimeout(() => { btn.textContent = '📋 Скопировать в буфер'; }, 2000);
+        setTimeout(() => { btn.textContent = 'Скопировать'; }, 2000);
       } catch {
         alert('Не удалось скопировать. Выделите текст вручную.');
       }
@@ -656,6 +678,32 @@ function setupEventListeners() {
   
   // 🔗 Обработчик кнопки фидбека — открываем опрос 
   initFeedbackModal();
+}
+  /**
+ * Функция для склонения и изменения регистра
+ * @param {string} text - Исходный текст выгоды (например, "Скидка 15%")
+ * @param {boolean} makeLowercase - true, если нужна строчная буква (для 1 оффера)
+ */
+function applyGrammar(text, makeLowercase) {
+    if (!text) return "";
+    
+    // 1. Склонение (Винительный падеж)
+    // Ты можешь добавить сюда другие слова по аналогии
+    let modifiedText = text;
+    if (text.startsWith("Скидка ")) modifiedText = "скидку " + text.slice(7);
+    else if (text.startsWith("Бонус ")) modifiedText = "бонусы " + text.slice(6);
+    else if (text.startsWith("Кэшбэк ")) modifiedText = "кэшбэк " + text.slice(7);
+
+    // 2. Изменение регистра первой буквы
+    if (makeLowercase) {
+        // Если makeLowercase = true -> делаем строчную (для 1 оффера)
+        return modifiedText.charAt(0).toLowerCase() + modifiedText.slice(1);
+    }
+    
+    // Если makeLowercase = false -> оставляем заглавную (для списка)
+    // НО учитываем, что слово уже могло измениться в падеже (Скидка -> Скидку)
+    // Убедимся, что первая буква все еще большая после замены на "скидку"
+    return modifiedText.charAt(0).toUpperCase() + modifiedText.slice(1);
 }
 // 🧩 Feedback Modal Module (production-ready)
 function initFeedbackModal() {
