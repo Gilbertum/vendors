@@ -168,6 +168,20 @@ select:focus { border-color: var(--border-active); outline: none; box-shadow: 0 
   </div>
 </div>
 <div class="modal-overlay" id="modal-overlay">
+    <!-- Feedback Modal -->
+  <div class="modal-overlay" id="feedback-modal">
+    <div class="modal" style="max-width: 900px; height: 80vh; padding: 0;">
+      <button class="modal-close" id="feedback-close">&times;</button>
+      <iframe 
+        id="feedback-iframe"
+        src=""
+        style="width:100%; height:100%; border:none; border-radius:16px;"
+        loading="lazy"
+      ></iframe>
+    </div>
+  </div>
+
+
   <div class="modal">
     <button class="modal-close" id="modal-close">&times;</button>
     <h3 id="modal-title">Детали оффера</h3>
@@ -605,9 +619,37 @@ function setupEventListeners() {
 
   document.getElementById('reset-btn').addEventListener('click', () => { selectedBundleIds = []; renderBundles(); updateResult(); });
   
-  // 🔗 Обработчик кнопки фидбека — вставь свою ссылку
-  document.getElementById('feedback-btn').addEventListener('click', () => {
-    window.open('https://forms.yandex.ru/your-survey-link', '_blank', 'noopener,noreferrer');
+  initFeedbackModal();
+}
+
+// 🧩 Feedback Modal Module (isolated, reusable)
+function initFeedbackModal() {
+  const FEEDBACK_URL = 'https://p.tbank.ru/polls/prod/poll-cmobly74g002q0dra49i7ba4n/index.html';
+
+  const btn = document.getElementById('feedback-btn');
+  const modal = document.getElementById('feedback-modal');
+  const closeBtn = document.getElementById('feedback-close');
+  const iframe = document.getElementById('feedback-iframe');
+
+  if (!btn || !modal || !closeBtn || !iframe) return;
+
+  const open = () => {
+    iframe.src = FEEDBACK_URL;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // lock scroll
+  };
+
+  const close = () => {
+    modal.classList.remove('active');
+    iframe.src = ''; // cleanup (важно!)
+    document.body.style.overflow = '';
+  };
+
+  btn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
   });
 }
 
