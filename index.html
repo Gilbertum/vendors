@@ -150,7 +150,7 @@ border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px;
 <div class="panel">
 <h3>1. Отрасль клиента</h3>
 <select id="industry-select" disabled>
-<option value="">Загрузка...</option>
+<option value="">Выберите отрасль...</option>
 </select>
 </div>
 <div class="panel">
@@ -639,7 +639,7 @@ closeBtn.addEventListener('click', close);
 modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 }
 async function init() {
-document.getElementById('bundles-grid').innerHTML = '<div class="loading"><div class="spinner"></div>Загрузка...</div>';
+document.getElementById('bundles-grid').innerHTML = '<div class="loading"><div class="spinner"></div>Выберите отрасль...</div>';
 const success = await loadData();
 if (success) { renderIndustries(); setupEventListeners(); }
 }
