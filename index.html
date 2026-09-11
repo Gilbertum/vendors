@@ -926,11 +926,15 @@
       position: relative;
       -webkit-tap-highlight-color: transparent;
     }
+
     .select-trigger:focus,
     .select-trigger:active {
       color: var(--text-primary) !important;
     }
-    /* dropdown */
+
+    /* Выпадающий список отраслей.
+       На больших экранах окно стало заметно выше, а если отраслей
+       всё равно больше — появляется прокрутка вместо обрезания. */
     .select-dropdown {
       position: absolute;
       top: calc(100% + 6px);
@@ -938,21 +942,30 @@
       right: 0;
 
       background: white;
+      border: 1px solid var(--border);
       border-radius: 16px;
       box-shadow: var(--shadow-md);
 
-      max-height: 260px;
-      overflow: auto;
+      max-height: min(520px, 65vh);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
 
       z-index: 9999;
     }
 
-    /* открытие */
     .select-custom.open .select-dropdown {
-      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
     }
 
-    /* элементы */
     .select-option {
       padding: 12px 14px;
       cursor: pointer;
@@ -960,38 +973,21 @@
       font-size: 14px;
     }
 
-    /* hover */
-    .select-option:hover {
+    .select-option:hover,
+    .select-option:focus-visible {
       background: var(--bg-page);
+      outline: none;
     }
 
-    /* активный */
     .select-option.active {
       background: var(--bg-accent);
       font-weight: 700;
       color: var(--text-primary) !important;
     }
 
-
-    .select-dropdown {
-      opacity: 0;
-      transform: translateY(6px);
-      pointer-events: none;
-      transition: all 0.2s ease;
-      z-index: 1000;
-    }
-
-    .select-custom.open .select-dropdown {
-      overflow-y: hidden;
-      z-index: 999;
-      border: 1px solid var(--border);
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
     @media (max-width: 768px) {
       .select-dropdown {
-        max-height: 220px;
+        max-height: min(360px, 55vh);
       }
     }
 
@@ -1082,11 +1078,17 @@
           
         </div>
         <div class="select-wrap select-custom" id="industry-select">
-          <button class="select-trigger" type="button">
+          <button
+            class="select-trigger"
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="industry-dropdown"
+          >
             Выберите отрасль…
           </button>
 
-          <div class="select-dropdown"></div>
+          <div class="select-dropdown" id="industry-dropdown" role="listbox"></div>
         </div>
         <div class="industry-info" id="industry-info" aria-live="polite">
           <div>
@@ -1261,7 +1263,7 @@
 
     function splitList(value) {
       return normalizeText(value)
-        .split(',')
+        .split(/[,;\n]+/)
         .map((item) => item.trim())
         .filter(Boolean);
     }
@@ -1397,10 +1399,12 @@
     }
 
     function getProductsForIndustry(industry) {
-      return state.allProducts
-        .filter((product) => product.industries.includes(industry))
-        .map((product) => product.name)
-        .filter(Boolean);
+      return [...new Set(
+        state.allProducts
+          .filter((product) => product.industries.includes(industry))
+          .map((product) => product.name)
+          .filter(Boolean)
+      )];
     }
 
     function getBundlesForIndustry(industry, products) {
@@ -1535,7 +1539,13 @@
       dropdown.innerHTML = options.map((industry) => {
         const active = industry === state.selectedIndustry ? 'active' : '';
         return `
-          <div class="select-option ${active}" data-value="${escapeHtml(industry)}">
+          <div
+            class="select-option ${active}"
+            data-value="${escapeHtml(industry)}"
+            role="option"
+            tabindex="-1"
+            aria-selected="${industry === state.selectedIndustry ? 'true' : 'false'}"
+          >
             ${escapeHtml(industry)}
           </div>
         `;
@@ -1574,7 +1584,9 @@
 
       container.innerHTML = sorted.map((product) => {
         const hasOffers = (bundlesByProduct.get(product) || 0) > 0;
-        const productRow = state.allProducts.find((item) => item.name === product);
+        const productRow = state.allProducts.find(
+          (item) => item.name === product && item.industries.includes(industry)
+        );
         const checked = state.selectedProducts.includes(product) ? 'checked' : '';
         const link = safeUrl(productRow?.link);
         const desc = productRow?.desc ? escapeHtml(productRow.desc) : '';
@@ -1954,10 +1966,15 @@
       const trigger = selectWrapper.querySelector('.select-trigger');
       const dropdown = selectWrapper.querySelector('.select-dropdown');
 
+      const setDropdownOpen = (isOpen) => {
+        selectWrapper.classList.toggle('open', isOpen);
+        trigger.setAttribute('aria-expanded', String(isOpen));
+      };
+
       // открыть / закрыть
       trigger.addEventListener('click', (e) => {
         e.stopPropagation();
-        selectWrapper.classList.toggle('open');
+        setDropdownOpen(!selectWrapper.classList.contains('open'));
       });
 
       // выбор
@@ -1973,7 +1990,7 @@
 
         persistState();
 
-        selectWrapper.classList.remove('open');
+        setDropdownOpen(false);
 
         renderIndustries();
         renderIndustryInfo();
@@ -1986,7 +2003,7 @@
       // клик вне
       document.addEventListener('click', (e) => {
         if (!selectWrapper.contains(e.target)) {
-          selectWrapper.classList.remove('open');
+          setDropdownOpen(false);
         }
       });
       els.copyBtn.addEventListener('click', copyResult);
@@ -1999,8 +2016,15 @@
       });
 
       document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && els.feedbackModal.classList.contains('active')) {
-          closeFeedbackModal();
+        if (event.key === 'Escape') {
+          if (selectWrapper.classList.contains('open')) {
+            setDropdownOpen(false);
+            trigger.focus();
+          }
+
+          if (els.feedbackModal.classList.contains('active')) {
+            closeFeedbackModal();
+          }
         }
       });
     }
